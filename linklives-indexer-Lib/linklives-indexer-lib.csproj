@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>linklives.indexer.lib</RootNamespace>
+    <AssemblyName>linklives-indexer-lib</AssemblyName>
+  </PropertyGroup>
+
+</Project>
