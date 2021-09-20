@@ -1,10 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <RootNamespace>Linklives.Indexer</RootNamespace>
-    <AssemblyName>linklives-indexer-lib</AssemblyName>
-    <UserSecretsId>36f3b650-8633-4de4-8624-94637b432ea8</UserSecretsId>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <RootNamespace>Linklives.Indexer.Lifecourses</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Utils\" />
+    <ProjectReference Include="..\linklives-indexer-Lib\linklives-indexer-lib.csproj" />
   </ItemGroup>
 
 </Project>
