@@ -23,7 +23,7 @@ namespace Linklives.Indexer.Lifecourses
                 var paSet = new DataSet<StandardPA>($"{basePath}\\{source.File_reference}");
                 foreach (var pa in paSet.Read())
                 {
-                    yield return BasePA.Create(source.Type, pa);
+                    yield return BasePA.Create(source.Source_id, pa);
                 }
             }
         }

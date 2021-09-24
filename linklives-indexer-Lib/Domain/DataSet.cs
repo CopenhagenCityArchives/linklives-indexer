@@ -19,8 +19,14 @@ namespace Linklives.Indexer.Domain
         }
         public IEnumerable<T> Read()
         {
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                MissingFieldFound = null, //Set to null so we ignore properties that dont have a matching column in the CSV
+                HeaderValidated = null, //Skip header validation since that would also throw an error if a property didnt have a matching column
+                Delimiter = ","
+            };
             using (var reader = new StreamReader(Path))
-            using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+            using (var csv = new CsvReader(reader, config))
             {
                 csv.Read();
                 csv.ReadHeader();

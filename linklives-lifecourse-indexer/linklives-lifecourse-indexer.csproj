@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="CsvHelper" Version="27.1.1" />
-    <PackageReference Include="LinkLivesLib" Version="1.0.7930.19083" />
+    <PackageReference Include="LinkLivesLib" Version="1.0.7934.12707" />
     <PackageReference Include="NEST" Version="7.14.1" />
   </ItemGroup>
 
