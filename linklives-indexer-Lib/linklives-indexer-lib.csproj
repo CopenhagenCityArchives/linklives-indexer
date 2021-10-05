@@ -9,12 +9,9 @@
 
   <ItemGroup>
     <PackageReference Include="CsvHelper" Version="27.1.1" />
-    <PackageReference Include="LinkLivesLib" Version="1.0.7941.12472" />
+    <PackageReference Include="LinkLivesLib" Version="1.0.7948.19823" />
+    <PackageReference Include="log4net" Version="2.0.12" />
     <PackageReference Include="NEST" Version="7.15.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Utils\" />
   </ItemGroup>
 
 </Project>
