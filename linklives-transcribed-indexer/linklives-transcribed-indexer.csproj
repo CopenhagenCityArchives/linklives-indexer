@@ -11,6 +11,17 @@
     <PackageReference Include="LinkLivesLib" Version="1.0.7948.19823" />
     <PackageReference Include="log4net" Version="2.0.12" />
     <PackageReference Include="NEST" Version="7.15.0" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.21308.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\linklives-indexer-Lib\linklives-indexer-lib.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="log4net.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

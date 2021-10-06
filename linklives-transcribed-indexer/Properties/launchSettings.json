@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "linklives-transcribed-indexer": {
+      "commandName": "Project",
+      "commandLineArgs": "--es-host https://data-dev.link-lives.dk --path F:\\link-lives\\transcribed_data_v1.0.dev0\\development --max-entries 100"
+    }
+  }
+}
