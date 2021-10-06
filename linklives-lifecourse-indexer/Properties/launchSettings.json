@@ -2,7 +2,7 @@
   "profiles": {
     "linklives-lifecourse-indexer": {
       "commandName": "Project",
-      "commandLineArgs": "--es-host https://data-dev.link-lives.dk --path F:\\link-lives\\LL_data_v1.0.dev0\\development --api-host https://api-test.link-lives.dk --lifecourses-count 100"
+      "commandLineArgs": "--es-host https://data-dev.link-lives.dk --path F:\\link-lives\\LL_data_v1.0.dev0\\development --api-host https://api-test.link-lives.dk --max-entries 100"
     }
   }
 }

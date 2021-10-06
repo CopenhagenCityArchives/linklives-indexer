@@ -24,7 +24,7 @@ namespace Linklives.Indexer.Lifecourses
                 new Option<string>("--path", "The path to the datasets top level folder"),
                 new Option<string>("--es-host", "The url of the elastic search server to use for this indexation"),
                 new Option<string>("--api-host", "The url of the linklives api server to use for this indexation"),
-                new Option<int>("--lifecourses-count", getDefaultValue: ()=> 0, "the maximum ammount of lifecourses to index, 0 indicates that all lifecourses should be indexed."),
+                new Option<int>("--max-entries", getDefaultValue: ()=> 0, "the maximum ammount of entries to index, 0 indicates that all entries should be indexed."),
             };
 
             cmd.Handler = CommandHandler.Create<string, string, string, int>(Index);
@@ -37,7 +37,7 @@ namespace Linklives.Indexer.Lifecourses
             XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
             Log = LogManager.GetLogger(System.Reflection.MethodInfo.GetCurrentMethod().DeclaringType.Name);
         }
-        static void Index(string path, string esHost, string apiHost, int maxLifecourses)
+        static void Index(string path, string esHost, string apiHost, int maxEntries)
         {
             var esClient = new ElasticClient(new ConnectionSettings(new Uri(esHost))
                .RequestTimeout(TimeSpan.FromMinutes(2))
