@@ -17,7 +17,7 @@ namespace Linklives.Indexer.Utils
         {
             _esClient = esClient;
         }
-        public string CreateNewIndex<T>(string index, bool dateDetection = true) where T : class
+        public string CreateNewIndex<T>(string index, bool dateDetection = false) where T : class
         {
             var indexname = $"{index}_{DateTime.Now.ToString("dd-MM-yyyy_hh-mm-ss")}";
             _esClient.Indices.Create(indexname, c => c.
