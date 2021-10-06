@@ -8,7 +8,9 @@ using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace Linklives.Indexer.Lifecourses
@@ -44,16 +46,36 @@ namespace Linklives.Indexer.Lifecourses
                .DisableDirectStreaming());
             var indexHelper = new ESHelper(esClient);
             var AliasIndexMapping = SetUpNewIndexes(indexHelper);
+            var indextimer = Stopwatch.StartNew();
 
+            var datasetTimer = Stopwatch.StartNew();
+            Log.Info("Indexing person appearances");
             indexHelper.BulkIndexDocs(ReadPAs(path), AliasIndexMapping["pas"]);
+            Log.Info($"Finished indexing person appearances. took {datasetTimer.Elapsed}");
+            datasetTimer.Restart();
+
+            Log.Info("Indexing lifecourses");
+            indexHelper.BulkIndexDocs(ReadLifeCourses(path), AliasIndexMapping["lifecourses"]);
+            Log.Info($"Finished indexing lifecourses. took {datasetTimer.Elapsed}");
+            datasetTimer.Restart();
+
+            Log.Info("Indexing sources");
+            indexHelper.BulkIndexDocs(new DataSet<Source>($"{path}\\auxilary_data\\sources\\sources.csv").Read(), AliasIndexMapping["sources"]);
+            Log.Info($"Finished indexing sources. took {datasetTimer.Elapsed}");
+            datasetTimer.Stop();
             //Do all the indexing stuff
+
+            indextimer.Stop();
+            Log.Info($"Finished indexing all avilable files. Took: {indextimer.Elapsed}");
+            Log.Info($"Activating new indices");
             indexHelper.ActivateNewIndices(AliasIndexMapping);
         }
+
         private static IDictionary<string,string> SetUpNewIndexes(ESHelper indexHelper)
         {
             var result = new Dictionary<string, string>();
             result["pas"] = indexHelper.CreateNewIndex<BasePA>("pas");
-            result["links"] = indexHelper.CreateNewIndex<Link>("links");
+            //result["links"] = indexHelper.CreateNewIndex<Link>("links");
             result["lifecourses"] = indexHelper.CreateNewIndex<LifeCourse>("lifecourses");
             result["sources"] = indexHelper.CreateNewIndex<Source>("sources");
             return result;
@@ -78,6 +100,22 @@ namespace Linklives.Indexer.Lifecourses
                     }
                     yield return pa;
                 }
+            }
+        }
+        private static IEnumerable<LifeCourse> ReadLifeCourses(string basepath)
+        {
+            var lifecoursesDataset = new DataSet<LifeCourse>($"{basepath}\\life-courses\\life_courses.csv");
+            var links = new DataSet<Link>($"{basepath}\\links\\links.csv").Read();
+            foreach (var lifecourse in lifecoursesDataset.Read())
+            {
+                var linkIds = lifecourse.Link_ids.Split(',').Select(i => Convert.ToInt32(i));
+                lifecourse.Links = links.Where(l => linkIds.Contains(l.Link_id)).ToList();
+                foreach (var link in lifecourse.Links)
+                {
+                    link.LifeCourseKey = lifecourse.Key;
+                    link.LifeCourse = lifecourse;
+                }
+                yield return lifecourse;
             }
         }
     }
