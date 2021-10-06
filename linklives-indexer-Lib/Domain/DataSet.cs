@@ -12,6 +12,7 @@ namespace Linklives.Indexer.Domain
     public class DataSet<T>
     {
         public string Path { get; private set; }
+        public string FileName { get => new FileInfo(Path).Name; }
 
         public DataSet(string path)
         {
