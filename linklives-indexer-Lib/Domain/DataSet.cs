@@ -18,7 +18,7 @@ namespace Linklives.Indexer.Domain
         {
             Path = path;
         }
-        public IEnumerable<T> Read()
+        public IEnumerable<T> Read(bool initKeys = false)
         {
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
@@ -34,7 +34,7 @@ namespace Linklives.Indexer.Domain
                 while (csv.Read())
                 {
                     var record = csv.GetRecord<T>();
-                    if (record is KeyedItem)
+                    if (initKeys && record is KeyedItem)
                     {
                         (record as KeyedItem).InitKey();
                     }

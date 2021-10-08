@@ -48,21 +48,22 @@ namespace Linklives.Indexer.Lifecourses
             var indextimer = Stopwatch.StartNew();
 
             var datasetTimer = Stopwatch.StartNew();
-            Log.Info("Indexing person appearances");
-            indexHelper.BulkIndexDocs(ReadPAs(path), AliasIndexMapping["pas"]);
-            Log.Info($"Finished indexing person appearances. took {datasetTimer.Elapsed}");
+            Log.Info("Indexing lifecourses");
+            var lifecourses = maxEntries == 0 ? ReadLifeCourses(path) : ReadLifeCourses(path).Take(maxEntries).ToList();
+            indexHelper.BulkIndexDocs(lifecourses, AliasIndexMapping["lifecourses"]);
+            Log.Info($"Finished indexing lifecourses. took {datasetTimer.Elapsed}");
             datasetTimer.Restart();
 
-            Log.Info("Indexing lifecourses");
-            indexHelper.BulkIndexDocs(ReadLifeCourses(path), AliasIndexMapping["lifecourses"]);
-            Log.Info($"Finished indexing lifecourses. took {datasetTimer.Elapsed}");
+            Log.Info("Indexing person appearances");
+            var pas = maxEntries == 0 ? ReadPAs(path) : ReadPAs(path).Where(p => lifecourses.SelectMany(lc => lc.Links.SelectMany(l => l.PaKeys)).ToList().Contains(p.Key));
+            indexHelper.BulkIndexDocs(pas, AliasIndexMapping["pas"]);
+            Log.Info($"Finished indexing person appearances. took {datasetTimer.Elapsed}");
             datasetTimer.Restart();
 
             Log.Info("Indexing sources");
             indexHelper.BulkIndexDocs(new DataSet<Source>($"{path}\\auxilary_data\\sources\\sources.csv").Read(), AliasIndexMapping["sources"]);
             Log.Info($"Finished indexing sources. took {datasetTimer.Elapsed}");
             datasetTimer.Stop();
-            //Do all the indexing stuff
 
             indextimer.Stop();
             Log.Info($"Finished indexing all avilable files. Took: {indextimer.Elapsed}");
@@ -70,7 +71,7 @@ namespace Linklives.Indexer.Lifecourses
             indexHelper.ActivateNewIndices(AliasIndexMapping);
         }
 
-        private static IDictionary<string,string> SetUpNewIndexes(ESHelper indexHelper)
+        private static IDictionary<string, string> SetUpNewIndexes(ESHelper indexHelper)
         {
             var result = new Dictionary<string, string>();
             result["pas"] = indexHelper.CreateNewIndex<BasePA>("pas");
@@ -91,6 +92,7 @@ namespace Linklives.Indexer.Lifecourses
                     try
                     {
                         pa = BasePA.Create(source.Source_id, stdPa);
+                        pa.InitKey();
                     }
                     catch (Exception)
                     {
@@ -104,7 +106,7 @@ namespace Linklives.Indexer.Lifecourses
         private static IEnumerable<LifeCourse> ReadLifeCourses(string basepath)
         {
             var lifecoursesDataset = new DataSet<LifeCourse>($"{basepath}\\life-courses\\life_courses.csv");
-            var links = new DataSet<Link>($"{basepath}\\links\\links.csv").Read();
+            var links = new DataSet<Link>($"{basepath}\\links\\links.csv").Read(true).ToList();
             foreach (var lifecourse in lifecoursesDataset.Read())
             {
                 var linkIds = lifecourse.Link_ids.Split(',').Select(i => Convert.ToInt32(i));
@@ -114,6 +116,7 @@ namespace Linklives.Indexer.Lifecourses
                     link.LifeCourseKey = lifecourse.Key;
                     link.LifeCourse = lifecourse;
                 }
+                lifecourse.InitKey();
                 yield return lifecourse;
             }
         }
