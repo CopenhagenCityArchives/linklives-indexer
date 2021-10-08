@@ -16,7 +16,7 @@ namespace Linklives.Indexer.Transcribed
 {
     class Program
     {
-        private static ILog Log;
+        private static ILog Log = LogManager.GetLogger(System.Reflection.MethodInfo.GetCurrentMethod().DeclaringType.Name);
         static int Main(string[] args)
         {
             Initconfig();
@@ -35,7 +35,6 @@ namespace Linklives.Indexer.Transcribed
         {
             var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
             XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
-            Log = LogManager.GetLogger(System.Reflection.MethodInfo.GetCurrentMethod().DeclaringType.Name);
         }
         static void Index(string path, string esHost, int maxEntries)
         {
