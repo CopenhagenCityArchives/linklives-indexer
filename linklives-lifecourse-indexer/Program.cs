@@ -1,8 +1,11 @@
-﻿using Linklives.Domain;
+﻿using Linklives.DAL;
+using Linklives.Domain;
 using Linklives.Indexer.Domain;
 using Linklives.Indexer.Utils;
 using log4net;
 using log4net.Config;
+using Microsoft.EntityFrameworkCore;
+using MoreLinq;
 using Nest;
 using System;
 using System.Collections.Generic;
@@ -25,7 +28,7 @@ namespace Linklives.Indexer.Lifecourses
             {
                 new Option<string>("--path", "The path to the datasets top level folder"),
                 new Option<string>("--es-host", "The url of the elastic search server to use for this indexation"),
-                new Option<string>("--api-host", "The url of the linklives api server to use for this indexation"),
+                new Option<string>("--db-conn", "The url of the linklives api server to use for this indexation"),
                 new Option<int>("--max-entries", getDefaultValue: ()=> 0, "the maximum ammount of entries to index, 0 indicates that all entries should be indexed."),
             };
 
@@ -38,12 +41,13 @@ namespace Linklives.Indexer.Lifecourses
             var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
             XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
         }
-        static void Index(string path, string esHost, string apiHost, int maxEntries)
+        static void Index(string path, string esHost, string dbConn, int maxEntries)
         {
             var esClient = new ElasticClient(new ConnectionSettings(new Uri(esHost))
                .RequestTimeout(TimeSpan.FromMinutes(2))
                .DisableDirectStreaming());
             var indexHelper = new ESHelper(esClient);
+            var dbContext = new LinklivesContext(new DbContextOptionsBuilder<LinklivesContext>().UseMySQL(dbConn).EnableSensitiveDataLogging().Options);
             var AliasIndexMapping = SetUpNewIndexes(indexHelper);
             var indextimer = Stopwatch.StartNew();
 
@@ -52,6 +56,19 @@ namespace Linklives.Indexer.Lifecourses
             var lifecourses = maxEntries == 0 ? ReadLifeCourses(path) : ReadLifeCourses(path).Take(maxEntries).ToList();
             indexHelper.BulkIndexDocs(lifecourses, AliasIndexMapping["lifecourses"]);
             Log.Info($"Finished indexing lifecourses. took {datasetTimer.Elapsed}");
+            datasetTimer.Restart();
+            Log.Info("Inserting lifecourses to DB");
+            var lifecourseRepo = new EFLifeCourseRepository(dbContext);
+            int count = 0;
+            foreach (var batch in lifecourses.Batch(5000))
+            {
+                var uniqueEntitites = batch.GroupBy(x => x.Key).Select(x => x.First()); //Guard against duplicate lifecourses. 
+                Log.Debug($"Upserting batch #{count} containing {uniqueEntitites.Count()} lifecourses to db");
+                lifecourseRepo.Upsert(uniqueEntitites);
+                lifecourseRepo.Save();
+                count++;
+            }
+            Log.Info($"Finished inserting lifecourses to db. took {datasetTimer.Elapsed}");
             datasetTimer.Restart();
 
             Log.Info("Indexing person appearances");
@@ -85,6 +102,7 @@ namespace Linklives.Indexer.Lifecourses
             var sources = new DataSet<Source>($"{basePath}\\auxilary_data\\sources\\sources.csv");
             foreach (var source in sources.Read())
             {
+                Log.Debug($"Reading PAs from source {source.Source_name}");
                 var paSet = new DataSet<StandardPA>($"{basePath}\\{source.File_reference}");
                 foreach (var stdPa in paSet.Read())
                 {
