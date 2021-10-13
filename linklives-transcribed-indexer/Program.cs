@@ -47,28 +47,25 @@ namespace Linklives.Indexer.Transcribed
             var indexName = indexHelper.CreateNewIndex<dynamic>(indexAlias, false);
             Log.Info($"Index {indexName} created");
             var indextimer = Stopwatch.StartNew();
-            foreach (var dataset in GetDataSets(path))
-            {
-                var datasetTimer = Stopwatch.StartNew();
-                Log.Info($"----------Beginning indexation of {dataset.FileName}----------");
-                indexHelper.BulkIndexDocs<dynamic>(dataset.Read(), indexName);
-                datasetTimer.Stop();
-                Log.Info($"Finished indexing {dataset.FileName}. took: {datasetTimer.Elapsed}");
-            }
+            indexHelper.BulkIndexDocs<dynamic>(GetPas(path), indexName);
             indextimer.Stop();
             Log.Info($"Finished indexing all avilable files. Took: {indextimer.Elapsed}");
             Log.Info($"Activating new index: {indexName}");
             indexHelper.ActivateNewIndex(indexAlias, indexName);
         }
 
-        private static IEnumerable<DataSet<dynamic>> GetDataSets(string path)
+        private static IEnumerable<dynamic> GetPas(string path)
         {
             var files = Directory.EnumerateFiles($"{path}\\transcribed_sources\\CBP", "*.csv", SearchOption.TopDirectoryOnly);
             files = files.Concat(Directory.EnumerateFiles($"{path}\\transcribed_sources\\census", "*.csv", SearchOption.TopDirectoryOnly));
             files = files.Concat(Directory.EnumerateFiles($"{path}\\transcribed_sources\\PR\\by_PA", "*.csv", SearchOption.TopDirectoryOnly));
             foreach (var file in files)
             {
-                yield return new DataSet<dynamic>(file);
+                Log.Debug($"Reading PAs from file {file}");
+                foreach (var item in new DataSet<dynamic>(file).Read())
+                {
+                    yield return item;
+                }
             }
         }
     }
