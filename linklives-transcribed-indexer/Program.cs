@@ -1,5 +1,4 @@
 ﻿using Linklives.Domain;
-using Linklives.Domain.PersonAppearance;
 using Linklives.Indexer.Domain;
 using Linklives.Indexer.Utils;
 using log4net;
@@ -65,7 +64,7 @@ namespace Linklives.Indexer.Transcribed
                 Log.Debug($"Reading PAs from file {filepath}");
                 foreach (var item in new DataSet<dynamic>(filepath).Read())
                 {
-                    var pa = new TranscribedPA { Pa_id = item.pa_id, Source_id = source.Source_id, Transcription = item };
+                    var pa = new TranscribedPA { Pa_id = Convert.ToInt32(item.pa_id), Source_id = source.Source_id, Transcription = item };
                     pa.InitKey();
                     yield return pa;
                 }

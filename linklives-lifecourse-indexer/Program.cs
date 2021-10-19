@@ -73,7 +73,7 @@ namespace Linklives.Indexer.Lifecourses
             datasetTimer.Restart();
 
             Log.Info("Indexing person appearances");
-            var pas = maxEntries == 0 ? ReadPAs(path) : ReadPAs(path).Where(p => lifecourses.SelectMany(lc => lc.Links.SelectMany(l => l.PaKeys)).ToList().Contains(p.Key));
+            var pas = maxEntries == 0 ? ReadPAs(path, transcribedPARepository) : ReadPAs(path, transcribedPARepository).Where(p => lifecourses.SelectMany(lc => lc.Links.SelectMany(l => l.PaKeys)).ToList().Contains(p.Key));
             indexHelper.BulkIndexDocs(pas, AliasIndexMapping["pas"]);
             Log.Info($"Finished indexing person appearances. took {datasetTimer.Elapsed}");
             datasetTimer.Restart();
@@ -116,7 +116,6 @@ namespace Linklives.Indexer.Lifecourses
                     }
                     catch (Exception)
                     {
-
                         throw;
                     }
                     yield return pa;
