@@ -1,4 +1,6 @@
-﻿using Linklives.Indexer.Domain;
+﻿using Linklives.Domain;
+using Linklives.Domain.PersonAppearance;
+using Linklives.Indexer.Domain;
 using Linklives.Indexer.Utils;
 using log4net;
 using log4net.Config;
@@ -54,19 +56,43 @@ namespace Linklives.Indexer.Transcribed
             indexHelper.ActivateNewIndex(indexAlias, indexName);
         }
 
-        private static IEnumerable<dynamic> GetPas(string path)
+        private static IEnumerable<TranscribedPA> GetPas(string path)
         {
-            var files = Directory.EnumerateFiles($"{path}\\transcribed_sources\\CBP", "*.csv", SearchOption.TopDirectoryOnly);
-            files = files.Concat(Directory.EnumerateFiles($"{path}\\transcribed_sources\\census", "*.csv", SearchOption.TopDirectoryOnly));
-            files = files.Concat(Directory.EnumerateFiles($"{path}\\transcribed_sources\\PR\\by_PA", "*.csv", SearchOption.TopDirectoryOnly));
-            foreach (var file in files)
+            var sources = GetSources();
+            foreach (var source in sources)
             {
-                Log.Debug($"Reading PAs from file {file}");
-                foreach (var item in new DataSet<dynamic>(file).Read())
+                var filepath = $"{path}\\{source.File_reference}";
+                Log.Debug($"Reading PAs from file {filepath}");
+                foreach (var item in new DataSet<dynamic>(filepath).Read())
                 {
-                    yield return item;
+                    var pa = new TranscribedPA { Pa_id = item.pa_id, Source_id = source.Source_id, Transcription = item };
+                    pa.InitKey();
+                    yield return pa;
                 }
             }
+        }
+        private static IEnumerable<Source> GetSources()
+        {
+            yield return new Source { Source_id = 0, File_reference = "transcribed_sources\\census\\1787_20190000.csv" };
+            yield return new Source { Source_id = 1, File_reference = "transcribed_sources\\census\\1801_20190000.csv" };
+            yield return new Source { Source_id = 2, File_reference = "transcribed_sources\\census\\1834_20190000.csv" };
+            yield return new Source { Source_id = 3, File_reference = "transcribed_sources\\census\\1840_20190000.csv" };
+            yield return new Source { Source_id = 4, File_reference = "transcribed_sources\\census\\1845_20190000.csv" };
+            yield return new Source { Source_id = 5, File_reference = "transcribed_sources\\census\\1850_20190000.csv" };
+            yield return new Source { Source_id = 6, File_reference = "transcribed_sources\\census\\1860_20190000.csv" };
+            yield return new Source { Source_id = 7, File_reference = "transcribed_sources\\census\\1880_20190000.csv" };
+            yield return new Source { Source_id = 8, File_reference = "transcribed_sources\\census\\1885_20190000.csv" };
+            yield return new Source { Source_id = 9, File_reference = "transcribed_sources\\census\\1901_20190000.csv" };
+
+            yield return new Source { Source_id = 10, File_reference = "transcribed_sources\\CBP\\CBP_20210309.csv" };
+
+            yield return new Source { Source_id = 11, File_reference = "transcribed_sources\\PR\\by_PA\\burial.csv" };
+            yield return new Source { Source_id = 12, File_reference = "transcribed_sources\\PR\\by_PA\\baptism.csv" };
+            yield return new Source { Source_id = 13, File_reference = "transcribed_sources\\PR\\by_PA\\marriage.csv" };
+            yield return new Source { Source_id = 14, File_reference = "transcribed_sources\\PR\\by_PA\\confirmation.csv" };
+            yield return new Source { Source_id = 15, File_reference = "transcribed_sources\\PR\\by_PA\\departure.csv" };
+            yield return new Source { Source_id = 16, File_reference = "transcribed_sources\\PR\\by_PA\\arrival.csv" };
+
         }
     }
 }

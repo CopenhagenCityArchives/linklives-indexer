@@ -9,9 +9,9 @@
 
   <ItemGroup>
     <PackageReference Include="CsvHelper" Version="27.1.1" />
-    <PackageReference Include="LinkLivesLib" Version="1.0.7956.14908" />
+    <PackageReference Include="LinkLivesLib" Version="1.0.7962.13899" />
     <PackageReference Include="log4net" Version="2.0.12" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.9" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.11.1" />
     <PackageReference Include="morelinq" Version="3.3.2" />
     <PackageReference Include="NEST" Version="7.15.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.21308.1" />

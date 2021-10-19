@@ -47,6 +47,7 @@ namespace Linklives.Indexer.Lifecourses
                .RequestTimeout(TimeSpan.FromMinutes(2))
                .DisableDirectStreaming());
             var indexHelper = new ESHelper(esClient);
+            var transcribedPARepository = new ESTranscribedPaRepository(esClient);
             var dbContext = new LinklivesContext(new DbContextOptionsBuilder<LinklivesContext>().UseMySQL(dbConn).EnableSensitiveDataLogging().Options);
             var AliasIndexMapping = SetUpNewIndexes(indexHelper);
             var indextimer = Stopwatch.StartNew();
@@ -97,20 +98,21 @@ namespace Linklives.Indexer.Lifecourses
             result["sources"] = indexHelper.CreateNewIndex<Source>("sources");
             return result;
         }
-        private static IEnumerable<BasePA> ReadPAs(string basePath)
+        private static IEnumerable<BasePA> ReadPAs(string basePath, ITranscribedPARepository transcribedPARepository)
         {
             var sources = new DataSet<Source>($"{basePath}\\auxilary_data\\sources\\sources.csv");
             foreach (var source in sources.Read())
             {
                 Log.Debug($"Reading PAs from source {source.Source_name}");
                 var paSet = new DataSet<StandardPA>($"{basePath}\\{source.File_reference}");
+                var transcribedSet = transcribedPARepository.GetBySource(source.Source_id);
                 foreach (var stdPa in paSet.Read())
                 {
                     BasePA pa = null;
                     try
                     {
-                        pa = BasePA.Create(source.Source_id, stdPa);
-                        pa.InitKey();
+                        pa = BasePA.Create(source.Source_id, stdPa, transcribedSet.First(t => t.Pa_id == stdPa.Pa_id));
+                        pa.InitKey();                        
                     }
                     catch (Exception)
                     {
