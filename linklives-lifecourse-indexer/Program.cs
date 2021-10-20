@@ -15,6 +15,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Z.EntityFramework.Extensions;
 
 namespace Linklives.Indexer.Lifecourses
 {
@@ -43,12 +44,25 @@ namespace Linklives.Indexer.Lifecourses
         }
         static void Index(string path, string esHost, string dbConn, int maxEntries)
         {
+            #region ES Setup
             var esClient = new ElasticClient(new ConnectionSettings(new Uri(esHost))
                .RequestTimeout(TimeSpan.FromMinutes(2))
                .DisableDirectStreaming());
             var indexHelper = new ESHelper(esClient);
+            #endregion
+            #region EF Setup
             var transcribedPARepository = new ESTranscribedPaRepository(esClient);
-            var dbContext = new LinklivesContext(new DbContextOptionsBuilder<LinklivesContext>().UseMySQL(dbConn).EnableSensitiveDataLogging().Options);
+            //This context factory is required by the EF extensions used in linklives.lib for bulk upserts
+            EntityFrameworkManager.ContextFactory = context =>
+            {
+                var optionsBuilder = new DbContextOptionsBuilder<LinklivesContext>();
+                optionsBuilder.UseMySQL(dbConn);
+                optionsBuilder.EnableSensitiveDataLogging();
+                return new LinklivesContext(optionsBuilder.Options);
+            };            
+            var dbContext = (LinklivesContext)EntityFrameworkManager.ContextFactory.Invoke(null);
+            #endregion
+
             var AliasIndexMapping = SetUpNewIndexes(indexHelper);
             var indextimer = Stopwatch.StartNew();
 
