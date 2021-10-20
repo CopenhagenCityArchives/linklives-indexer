@@ -72,6 +72,7 @@ namespace Linklives.Indexer.Transcribed
         }
         private static IEnumerable<Source> GetSources()
         {
+            //TODO: Get these from the new sources file when it becomes available, instead of hardcoding them.
             yield return new Source { Source_id = 0, File_reference = "transcribed_sources\\census\\1787_20190000.csv" };
             yield return new Source { Source_id = 1, File_reference = "transcribed_sources\\census\\1801_20190000.csv" };
             yield return new Source { Source_id = 2, File_reference = "transcribed_sources\\census\\1834_20190000.csv" };

@@ -125,18 +125,26 @@ namespace Linklives.Indexer.Lifecourses
         private static IEnumerable<LifeCourse> ReadLifeCourses(string basepath)
         {
             var lifecoursesDataset = new DataSet<LifeCourse>($"{basepath}\\life-courses\\life_courses.csv");
-            var links = new DataSet<Link>($"{basepath}\\links\\links.csv").Read(true).ToList();
+            var links = MakeLinksUnique(new DataSet<Link>($"{basepath}\\links\\links.csv").Read(true).ToList());
             foreach (var lifecourse in lifecoursesDataset.Read())
             {
-                var linkIds = lifecourse.Link_ids.Split(',').Select(i => Convert.ToInt32(i));
-                lifecourse.Links = links.Where(l => linkIds.Contains(l.Link_id)).ToList();
-                foreach (var link in lifecourse.Links)
-                {
-                    link.LifeCourseKey = lifecourse.Key;
-                    link.LifeCourse = lifecourse;
-                }
+                var linkIds = lifecourse.Link_ids.Split(',').Select(i => i);
+                lifecourse.Links = links.Where(l => linkIds.Intersect(l.Link_id.Split(",")).Any()).ToList();
                 lifecourse.InitKey();
                 yield return lifecourse;
+            }
+        }
+        private static IEnumerable<Link> MakeLinksUnique(IEnumerable<Link> links)
+        {
+            var groups = links.GroupBy(l => l.Key);
+            foreach (var group in groups)
+            {
+                var link = group.First();
+                if (group.Count() > 1)
+                {
+                    link.Link_id = string.Join(',', group.Select(l => l.Link_id));
+                }
+                yield return link;
             }
         }
     }
