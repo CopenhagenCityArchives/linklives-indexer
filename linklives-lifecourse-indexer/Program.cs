@@ -15,6 +15,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Z.EntityFramework.Extensions;
 
 namespace Linklives.Indexer.Lifecourses
@@ -67,14 +68,18 @@ namespace Linklives.Indexer.Lifecourses
             var indextimer = Stopwatch.StartNew();
 
             var datasetTimer = Stopwatch.StartNew();
+
+            Log.Info("Reading lifecourses from file, this may take some time...");
+            var lifecourses = maxEntries == 0 ? ReadLifeCourses(path).ToList() : ReadLifeCourses(path).Take(maxEntries).ToList();
             Log.Info("Indexing lifecourses");
-            var lifecourses = maxEntries == 0 ? ReadLifeCourses(path) : ReadLifeCourses(path).Take(maxEntries).ToList();
             indexHelper.BulkIndexDocs(lifecourses, AliasIndexMapping["lifecourses"]);
             Log.Info($"Finished indexing lifecourses. took {datasetTimer.Elapsed}");
             datasetTimer.Restart();
             Log.Info("Inserting lifecourses to DB");
             var lifecourseRepo = new EFLifeCourseRepository(dbContext);
-            int count = 0;
+            int count = 1;
+            //TODO: would love to run this loop in paralel but there are some issues with the thread safety of entityframework.
+            //Parallel.ForEach(lifecourses.Batch(5000), new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, batch =>
             foreach (var batch in lifecourses.Batch(5000))
             {
                 var uniqueEntitites = batch.GroupBy(x => x.Key).Select(x => x.First()); //Guard against duplicate lifecourses. 
@@ -83,6 +88,8 @@ namespace Linklives.Indexer.Lifecourses
                 lifecourseRepo.Save();
                 count++;
             }
+            //});
+            lifecourses.Clear(); //free up some memory space
             Log.Info($"Finished inserting lifecourses to db. took {datasetTimer.Elapsed}");
             datasetTimer.Restart();
 
@@ -119,13 +126,17 @@ namespace Linklives.Indexer.Lifecourses
             {
                 Log.Debug($"Reading PAs from source {source.Source_name}");
                 var paSet = new DataSet<StandardPA>($"{basePath}\\{source.File_reference}");
-                var transcribedSet = transcribedPARepository.GetBySource(source.Source_id);
+                var timer = Stopwatch.StartNew();
+                Log.Debug($"Fetching transcribed PAs for source id: {source.Source_id}");
+                var transcribedDict = transcribedPARepository.GetBySource(source.Source_id).ToDictionary(x => x.Pa_id);
+                timer.Stop();
+                Log.Debug($"Finished fetching transcribed PAs. Took : {timer.Elapsed}");
                 foreach (var stdPa in paSet.Read())
                 {
                     BasePA pa = null;
                     try
                     {
-                        pa = BasePA.Create(source.Source_id, stdPa, transcribedSet.First(t => t.Pa_id == stdPa.Pa_id));
+                        pa = BasePA.Create(source.Source_id, stdPa, transcribedDict[stdPa.Pa_id]);
                         pa.InitKey();                        
                     }
                     catch (Exception)
@@ -139,27 +150,45 @@ namespace Linklives.Indexer.Lifecourses
         private static IEnumerable<LifeCourse> ReadLifeCourses(string basepath)
         {
             var lifecoursesDataset = new DataSet<LifeCourse>($"{basepath}\\life-courses\\life_courses.csv");
-            var links = MakeLinksUnique(new DataSet<Link>($"{basepath}\\links\\links.csv").Read(true).ToList());
+            Dictionary<string, string> IdToKeydDict;
+            var links = MakeLinksUnique(new DataSet<Link>($"{basepath}\\links\\links.csv").Read(true), out IdToKeydDict);
             foreach (var lifecourse in lifecoursesDataset.Read())
             {
-                var linkIds = lifecourse.Link_ids.Split(',').Select(i => i);
-                lifecourse.Links = links.Where(l => linkIds.Intersect(l.Link_id.Split(",")).Any()).ToList();
+                //TODO: Can we find the links in one go instead of doing 2 queries? It might perform better.
+                var linkKeys = (from d in IdToKeydDict
+                               join l in lifecourse.Link_ids.Split(',')
+                               on d.Key equals l
+                               select d.Value).ToList();
+                lifecourse.Links = (from l in links
+                                    join k in linkKeys
+                                    on l.Key equals k
+                                    select l).ToList();
                 lifecourse.InitKey();
                 yield return lifecourse;
             }
         }
-        private static IEnumerable<Link> MakeLinksUnique(IEnumerable<Link> links)
+        private static List<Link> MakeLinksUnique(IEnumerable<Link> links, out Dictionary<string, string> IdToKeydDict)
         {
             var groups = links.GroupBy(l => l.Key);
+            var result = new List<Link>();
+            IdToKeydDict = new Dictionary<string, string>();
             foreach (var group in groups)
             {
-                var link = group.First();
-                if (group.Count() > 1)
+                var mainLink = group.First();
+                var first = true;
+                foreach (var groupLink in group)
                 {
-                    link.Link_id = string.Join(',', group.Select(l => l.Link_id));
+                    IdToKeydDict.Add(groupLink.Link_id, groupLink.Key);
+                    if (first)
+                    {
+                        first = false;
+                        continue;
+                    }
+                    mainLink.Link_id += "," + groupLink.Link_id;                    
                 }
-                yield return link;
+                result.Add(mainLink);
             }
+            return result;
         }
     }
 }
