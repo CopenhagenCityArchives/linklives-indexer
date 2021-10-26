@@ -53,7 +53,7 @@ namespace Linklives.Indexer.Utils
         }
         public void BulkIndexDocs<T>(IEnumerable<T> docs, string index) where T : class
         {
-            //TODO: Add fetch some of these config values from enviroment config instead of hardcording.
+            //TODO: Fetch some of these config values from enviroment config instead of hardcording.
             //TODO: Maybe pass in a proper oberserver so we can handle events other than onNext and leave handling of events to the calling code instead of doing it here. see: https://www.elastic.co/guide/en/elasticsearch/client/net-api/current/indexing-documents.html#_advanced_bulk_indexing
             var bulkAllObservable = _esClient.BulkAll(docs, b => b
                .Index(index)
