@@ -136,7 +136,7 @@ namespace Linklives.Indexer.Lifecourses
                     BasePA pa = null;
                     try
                     {
-                        pa = BasePA.Create(source.Source_id, stdPa, transcribedDict[stdPa.Pa_id]);
+                        pa = BasePA.Create(source, stdPa, transcribedDict[stdPa.Pa_id]);
                         pa.InitKey();                        
                     }
                     catch (Exception)
