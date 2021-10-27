@@ -31,11 +31,11 @@ script:
   # Run tests?
   
   # build and push linklives-transcribed-indexer image
-  - docker build -f ./linklives-transcribed-indexer/Dockerfile_prod -t linklives-transcribed-indexer .
+  - docker build -f ./linklives-transcribed-indexer/Dockerfile.prod -t linklives-transcribed-indexer .
   - docker tag linklives-transcribed-indexer 282251075226.dkr.ecr.eu-west-1.amazonaws.com/linklives-transcribed-indexer:${IMAGE_TAG}
   - docker push 282251075226.dkr.ecr.eu-west-1.amazonaws.com/linklives-transcribed-indexer:${IMAGE_TAG}
 
   # build and push linklives-lifecourse-indexer image
-  - docker build -f ./linklives-lifecourse-indexer/Dockerfile_prod -t linklives-lifecourse-indexer .
+  - docker build -f ./linklives-lifecourse-indexer/Dockerfile.prod -t linklives-lifecourse-indexer .
   - docker tag linklives-lifecourse-indexer 282251075226.dkr.ecr.eu-west-1.amazonaws.com/linklives-lifecourse-indexer:${IMAGE_TAG}
   - docker push 282251075226.dkr.ecr.eu-west-1.amazonaws.com/linklives-lifecourse-indexer:${IMAGE_TAG}
