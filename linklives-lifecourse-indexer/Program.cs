@@ -144,9 +144,11 @@ namespace Linklives.Indexer.Lifecourses
                     pa = BasePA.Create(source, paDict[trsPa.Pa_id], trsPa);
                     pa.InitKey();                    
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
-                    throw;
+                    //If for some reason we cant parse a PA we skip it and log the error.
+                    Log.Error($"Failed to read pa with id {transcribtion.pa_id} reason: {e.Message}", e);
+                    continue;
                 }
                 yield return pa;
             }
