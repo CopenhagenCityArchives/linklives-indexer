@@ -64,46 +64,65 @@ namespace Linklives.Indexer.Lifecourses
             };
             var dbContext = (LinklivesContext)EntityFrameworkManager.ContextFactory.Invoke(null);
             #endregion
+            
+                        var AliasIndexMapping = SetUpNewIndexes(indexHelper);
+                        var indextimer = Stopwatch.StartNew();
+                        var datasetTimer = Stopwatch.StartNew();
+            /*    Log.Info("Reading lifecourses from file, this may take some time...");
+                var lifecourses = maxEntries == 0 ? ReadLifeCourses(llPath).ToList() : ReadLifeCourses(llPath).Take(maxEntries).ToList();
+                Log.Info("Indexing lifecourses");
+          //      indexHelper.BulkIndexDocs(lifecourses, AliasIndexMapping["lifecourses"]);
+                Log.Info($"Finished indexing lifecourses. took {datasetTimer.Elapsed}");
+                datasetTimer.Restart();
+                Log.Info("Inserting lifecourses to DB");
+                var beforecount = lifecourses.Count();
+                lifecourses = lifecourses.GroupBy(x => x.Key).Select(x => x.First()).ToList();
+                Log.Info($"Discarded {beforecount - lifecourses.Count()} lifecourses while checking for duplicate keys. Took {datasetTimer.Elapsed}");
+                var lifecourseRepo = new EFLifeCourseRepository(dbContext);
+                int count = 1;
+                foreach (var batch in lifecourses.Batch(10000))
+                {
+                    var timer = Stopwatch.StartNew();
+       //             lifecourseRepo.Upsert(batch);
+       //             lifecourseRepo.Save();
+                    Log.Debug($"Upserted batch #{count} containing {batch.Count()} lifecourses to db. Took {timer.Elapsed}");
+                    count++;
+                }
 
-            var AliasIndexMapping = SetUpNewIndexes(indexHelper);
-            var indextimer = Stopwatch.StartNew();
-            var datasetTimer = Stopwatch.StartNew();
-            Log.Info("Reading lifecourses from file, this may take some time...");
-            var lifecourses = maxEntries == 0 ? ReadLifeCourses(llPath).ToList() : ReadLifeCourses(llPath).Take(maxEntries).ToList();
-            Log.Info("Indexing lifecourses");
-            indexHelper.BulkIndexDocs(lifecourses, AliasIndexMapping["lifecourses"]);
-            Log.Info($"Finished indexing lifecourses. took {datasetTimer.Elapsed}");
-            datasetTimer.Restart();
-            Log.Info("Inserting lifecourses to DB");
-            var beforecount = lifecourses.Count();
-            lifecourses = lifecourses.GroupBy(x => x.Key).Select(x => x.First()).ToList();
-            Log.Info($"Discarded {beforecount - lifecourses.Count()} lifecourses while checking for duplicate keys. Took {datasetTimer.Elapsed}");
-            var lifecourseRepo = new EFLifeCourseRepository(dbContext);
-            int count = 1;
-            foreach (var batch in lifecourses.Batch(10000))
-            {
-                var timer = Stopwatch.StartNew();
-                lifecourseRepo.Upsert(batch);
-                lifecourseRepo.Save();
-                Log.Debug($"Upserted batch #{count} containing {batch.Count()} lifecourses to db. Took {timer.Elapsed}");
-                count++;
-            }
-            lifecourses.Clear(); //free up some memory space
-            Log.Info($"Finished inserting lifecourses to db. took {datasetTimer.Elapsed}");
-            datasetTimer.Restart();
+                var pasInLifeCourses = new Dictionary<string, bool>();
+
+                // Build a list of pa-ids in lifecourses if max-entries is set
+                if(maxEntries > 0)
+                {
+                    foreach (LifeCourse lc in lifecourses)
+                    {
+                        foreach(string paKey in lc.Source_ids.Split(",").Zip(lc.Pa_ids.Split(","), (first, second) => first + "-" + second))
+                        {
+                            pasInLifeCourses.TryAdd(paKey, true);
+                        }
+                    }
+                }
+
+                lifecourses.Clear(); //free up some memory space
+                Log.Info($"Finished inserting lifecourses to db. took {datasetTimer.Elapsed}");
+                datasetTimer.Restart();
+    */
+            var pasInLifeCourses = new Dictionary<string, bool>();
             Log.Info("Indexing person appearances");
             var sources = new DataSet<Source>($"{llPath}\\auxilary_data\\sources\\sources.csv").Read().ToList();
             //Parallel.ForEach(sources, new ParallelOptions { MaxDegreeOfParallelism = 2 }, source =>
-            foreach (var source in sources)
+            foreach (var source in Enumerable.TakeLast(sources, 6))
             {
                 Log.Debug($"Reading PAs from source {source.Source_name}");
                 var timer = Stopwatch.StartNew();
-                var sourcePAs = ReadSourcePAs(llPath, source, trsPath);
-                if (maxEntries != 0)
+                var sourcePAs = ReadSourcePAs(llPath, source, trsPath, pasInLifeCourses);
+                /*if (maxEntries != 0)
                 {
+                    // Get relevant pas from sources
                     //TODO: could we improve performance by using joins instead?
                     sourcePAs = sourcePAs.Where(p => lifecourses.SelectMany(lc => lc.Links.SelectMany(l => l.PaKeys)).ToList().Contains(p.Key));
-                }
+                }*/
+                Log.Debug($"Indexing PAs from source {source.Source_name}");
                 indexHelper.BulkIndexDocs(sourcePAs, AliasIndexMapping["pas"]);
                 Log.Debug($"finished fetching PAs from source {source.Source_name}. Took: {timer.Elapsed}");
             }//);
@@ -130,9 +149,11 @@ namespace Linklives.Indexer.Lifecourses
             result["sources"] = indexHelper.CreateNewIndex<Source>("sources");
             return result;
         }
-        private static IEnumerable<BasePA> ReadSourcePAs(string basePath, Source source, string trsPath)
-        {            
+        private static IEnumerable<BasePA> ReadSourcePAs(string basePath, Source source, string trsPath, Dictionary<string,bool> paFilter)
+        {
+            Log.Info($"Loading standardized PAs into memory");
             var paDict = new DataSet<StandardPA>($"{basePath}\\{source.File_reference}").Read().ToDictionary(x => x.Pa_id);
+            Log.Info($"Reading transcribed PAs from {trsPath}\\{source.Original_data_reference}");
             var trsSet = new DataSet<dynamic>($"{trsPath}\\{source.Original_data_reference}");
             //Transcribed files can be pretty big so going over them row by row when matching to our standardised pa saves on memory.
             foreach (var transcribtion in trsSet.Read())
@@ -150,10 +171,14 @@ namespace Linklives.Indexer.Lifecourses
                     Log.Error($"Failed to read pa with id {transcribtion.pa_id} reason: {e.Message}", e);
                     continue;
                 }
+
+                //If paFilter has entries and the pa is not in it, dont return it
+                if (paFilter.Count > 0 && !paFilter.ContainsKey(pa.Key)) { continue; }
+
                 yield return pa;
             }
         }
-        private static IEnumerable<LifeCourse> ReadLifeCourses(string basepath)
+        private static IEnumerable<LifeCourse> ReadLifeCourses(string basepath, int count = 0)
         {
             var lifecoursesDataset = new DataSet<LifeCourse>($"{basepath}\\life-courses\\life_courses.csv");
             Log.Debug("Uniquefying links");
