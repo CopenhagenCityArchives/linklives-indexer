@@ -109,8 +109,9 @@ namespace Linklives.Indexer.Lifecourses
     */
             var pasInLifeCourses = new Dictionary<string, bool>();
             Log.Info("Indexing person appearances");
-            var sources = new DataSet<Source>($"{llPath}\\auxilary_data\\sources\\sources.csv").Read().ToList();
+            var sources = new DataSet<Source>(Path.Combine(llPath, "auxilary_data", "sources", "sources.csv")).Read().ToList();
             //Parallel.ForEach(sources, new ParallelOptions { MaxDegreeOfParallelism = 2 }, source =>
+            //TODO: Use all sources
             foreach (var source in Enumerable.TakeLast(sources, 6))
             {
                 Log.Debug($"Reading PAs from source {source.Source_name}");
@@ -152,9 +153,9 @@ namespace Linklives.Indexer.Lifecourses
         private static IEnumerable<BasePA> ReadSourcePAs(string basePath, Source source, string trsPath, Dictionary<string,bool> paFilter)
         {
             Log.Info($"Loading standardized PAs into memory");
-            var paDict = new DataSet<StandardPA>($"{basePath}\\{source.File_reference}").Read().ToDictionary(x => x.Pa_id);
-            Log.Info($"Reading transcribed PAs from {trsPath}\\{source.Original_data_reference}");
-            var trsSet = new DataSet<dynamic>($"{trsPath}\\{source.Original_data_reference}");
+            var paDict = new DataSet<StandardPA>(Path.Combine(basePath, source.File_reference)).Read().ToDictionary(x => x.Pa_id);
+            Log.Info($"Reading transcribed PAs from " + Path.Combine(trsPath, source.Original_data_reference));
+            var trsSet = new DataSet<dynamic>(Path.Combine(trsPath, source.Original_data_reference));
             //Transcribed files can be pretty big so going over them row by row when matching to our standardised pa saves on memory.
             foreach (var transcribtion in trsSet.Read())
             {
@@ -180,10 +181,10 @@ namespace Linklives.Indexer.Lifecourses
         }
         private static IEnumerable<LifeCourse> ReadLifeCourses(string basepath, int count = 0)
         {
-            var lifecoursesDataset = new DataSet<LifeCourse>($"{basepath}\\life-courses\\life_courses.csv");
+            var lifecoursesDataset = new DataSet<LifeCourse>(Path.Combine(basepath, "life-courses", "life_courses.csv"));
             Log.Debug("Uniquefying links");
             var timer = Stopwatch.StartNew();
-            var links = MakeLinksUnique(new DataSet<Link>($"{basepath}\\links\\links.csv").Read(true));
+            var links = MakeLinksUnique(new DataSet<Link>(Path.Combine(basepath, "links","links.csv")).Read(true));
             Log.Debug($"Finished uniquefying links. Took: {timer.Elapsed}");
             timer.Stop();
             foreach (var lifecourse in lifecoursesDataset.Read())
