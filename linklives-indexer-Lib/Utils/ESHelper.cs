@@ -47,9 +47,13 @@ namespace Linklives.Indexer.Utils
             var oldIndices = _esClient.Indices.Get($"{indexAlias}*").Indices.Where(i => i.Key.Name != indexName);
             foreach (var oldIndex in oldIndices)
             {
-                Log.Debug($"Deleting {oldIndex}");
-                _esClient.Indices.Delete(oldIndex.Key.Name);
+                RemoveIndex(oldIndex.Key);
             }
+        }
+        public void RemoveIndex(IndexName index)
+        {
+            Log.Debug($"Deleting {index}");
+            _esClient.Indices.Delete(index);
         }
         public void BulkIndexDocs<T>(IEnumerable<T> docs, string index) where T : class
         {
