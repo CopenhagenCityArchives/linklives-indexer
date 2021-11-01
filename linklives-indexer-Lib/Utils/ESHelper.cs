@@ -65,7 +65,7 @@ namespace Linklives.Indexer.Utils
                .BackOffRetries(3)
                .RefreshOnCompleted()
                .MaxDegreeOfParallelism(Environment.ProcessorCount)
-               .Size(5000))
+               .Size(3000))
                .Wait(TimeSpan.FromHours(3), onNext: response => { Log.Debug($"Page: {response.Page} containing: {response.Items.Count} items sucessfully indexed to {index}"); });
 
         }
