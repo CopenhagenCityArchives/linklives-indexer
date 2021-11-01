@@ -107,38 +107,49 @@ namespace Linklives.Indexer.Lifecourses
                 Log.Info($"Finished inserting lifecourses to db. took {datasetTimer.Elapsed}");
                 datasetTimer.Restart();
     */
-            var pasInLifeCourses = new Dictionary<string, bool>();
-            Log.Info("Indexing person appearances");
-            var sources = new DataSet<Source>(Path.Combine(llPath, "auxilary_data", "sources", "sources.csv")).Read().ToList();
-            //Parallel.ForEach(sources, new ParallelOptions { MaxDegreeOfParallelism = 2 }, source =>
-            //TODO: Use all sources
-            foreach (var source in Enumerable.TakeLast(sources, 6))
-            {
-                Log.Debug($"Reading PAs from source {source.Source_name}");
-                var timer = Stopwatch.StartNew();
-                var sourcePAs = ReadSourcePAs(llPath, source, trsPath, pasInLifeCourses);
-                /*if (maxEntries != 0)
+            try { 
+                var pasInLifeCourses = new Dictionary<string, bool>();
+                Log.Info("Indexing person appearances");
+                var sources = new DataSet<Source>(Path.Combine(llPath, "auxilary_data", "sources", "sources.csv")).Read().ToList();
+                //Parallel.ForEach(sources, new ParallelOptions { MaxDegreeOfParallelism = 2 }, source =>
+                //TODO: Use all sources
+                foreach (var source in Enumerable.TakeLast(sources, 4))
                 {
-                    // Get relevant pas from sources
-                    //TODO: could we improve performance by using joins instead?
-                    sourcePAs = sourcePAs.Where(p => lifecourses.SelectMany(lc => lc.Links.SelectMany(l => l.PaKeys)).ToList().Contains(p.Key));
-                }*/
-                Log.Debug($"Indexing PAs from source {source.Source_name}");
-                indexHelper.BulkIndexDocs(sourcePAs, AliasIndexMapping["pas"]);
-                Log.Debug($"finished fetching PAs from source {source.Source_name}. Took: {timer.Elapsed}");
-            }//);
-            Log.Info($"Finished indexing person appearances. took {datasetTimer.Elapsed}");
-            datasetTimer.Restart();
+                    Log.Debug($"Reading PAs from source {source.Source_name}");
+                    var timer = Stopwatch.StartNew();
+                    var sourcePAs = ReadSourcePAs(llPath, source, trsPath, pasInLifeCourses);
+                    /*if (maxEntries != 0)
+                    {
+                        // Get relevant pas from sources
+                        //TODO: could we improve performance by using joins instead?
+                        sourcePAs = sourcePAs.Where(p => lifecourses.SelectMany(lc => lc.Links.SelectMany(l => l.PaKeys)).ToList().Contains(p.Key));
+                    }*/
+                    Log.Debug($"Indexing PAs from source {source.Source_name}");
+                    indexHelper.BulkIndexDocs(sourcePAs, AliasIndexMapping["pas"]);
+                    Log.Debug($"finished fetching PAs from source {source.Source_name}. Took: {timer.Elapsed}");
+                }//);
+                Log.Info($"Finished indexing person appearances. Took {datasetTimer.Elapsed}");
+                datasetTimer.Restart();
 
-            Log.Info("Indexing sources");
-            indexHelper.BulkIndexDocs(sources, AliasIndexMapping["sources"]);
-            Log.Info($"Finished indexing sources. took {datasetTimer.Elapsed}");
-            datasetTimer.Stop();
+                Log.Info("Indexing sources");
+                indexHelper.BulkIndexDocs(sources, AliasIndexMapping["sources"]);
+                Log.Info($"Finished indexing sources. took {datasetTimer.Elapsed}");
+                datasetTimer.Stop();
 
-            indextimer.Stop();
-            Log.Info($"Finished indexing all avilable files. Took: {indextimer.Elapsed}");
-            Log.Info($"Activating new indices");
-            indexHelper.ActivateNewIndices(AliasIndexMapping);
+                indextimer.Stop();
+                Log.Info($"Finished indexing all avilable files. Took: {indextimer.Elapsed}");
+                Log.Info($"Activating new indices");
+                indexHelper.ActivateNewIndices(AliasIndexMapping);
+            }
+            catch(Exception e)
+            {
+                Log.Warn("Could not complete indexation: " + e.Message);
+                Log.Info("Removing new indexes");
+                foreach(var mapping in AliasIndexMapping){
+                    Log.Info($"Removing index {mapping.Value}");
+                    indexHelper.RemoveIndex(mapping.Value);
+                }
+            }
         }
 
         private static IDictionary<string, string> SetUpNewIndexes(ESHelper indexHelper)
