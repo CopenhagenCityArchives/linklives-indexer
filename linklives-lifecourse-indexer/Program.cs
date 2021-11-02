@@ -112,21 +112,15 @@ namespace Linklives.Indexer.Lifecourses
                 Log.Info("Indexing person appearances");
                 var sources = new DataSet<Source>(Path.Combine(llPath, "auxilary_data", "sources", "sources.csv")).Read().ToList();
                 //Parallel.ForEach(sources, new ParallelOptions { MaxDegreeOfParallelism = 2 }, source =>
-                //TODO: Use all sources
-                foreach (var source in Enumerable.TakeLast(sources, 4))
+                foreach (var source in sources)
                 {
                     Log.Debug($"Reading PAs from source {source.Source_name}");
                     var timer = Stopwatch.StartNew();
                     var sourcePAs = ReadSourcePAs(llPath, source, trsPath, pasInLifeCourses);
-                    /*if (maxEntries != 0)
-                    {
-                        // Get relevant pas from sources
-                        //TODO: could we improve performance by using joins instead?
-                        sourcePAs = sourcePAs.Where(p => lifecourses.SelectMany(lc => lc.Links.SelectMany(l => l.PaKeys)).ToList().Contains(p.Key));
-                    }*/
                     Log.Debug($"Indexing PAs from source {source.Source_name}");
                     indexHelper.BulkIndexDocs(sourcePAs, AliasIndexMapping["pas"]);
-                    Log.Debug($"finished fetching PAs from source {source.Source_name}. Took: {timer.Elapsed}");
+                    esClient.
+                    Log.Debug($"Finished fetching PAs from source {source.Source_name}. Took: {timer.Elapsed}");
                 }//);
                 Log.Info($"Finished indexing person appearances. Took {datasetTimer.Elapsed}");
                 datasetTimer.Restart();
