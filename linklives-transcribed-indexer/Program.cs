@@ -41,7 +41,7 @@ namespace Linklives.Indexer.Transcribed
         {
             var indexAlias = "transcribed";
             var esClient = new ElasticClient(new ConnectionSettings(new Uri(esHost))
-               .RequestTimeout(TimeSpan.FromMinutes(2))
+               .RequestTimeout(TimeSpan.FromMinutes(1))
                .DisableDirectStreaming());
             var indexHelper = new ESHelper(esClient);
             Log.Info($"Creating new elasticsearch index for alias {indexAlias}");
