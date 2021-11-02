@@ -65,9 +65,15 @@ namespace Linklives.Indexer.Utils
                .BackOffRetries(3)
                .RefreshOnCompleted()
                .MaxDegreeOfParallelism(Environment.ProcessorCount)
-               .Size(3000))
+               .Size(3000)
+               .Timeout("1m"))
                .Wait(TimeSpan.FromHours(3), onNext: response => { Log.Debug($"Page: {response.Page} containing: {response.Items.Count} items sucessfully indexed to {index}"); });
 
         }
+
+       /* public void BulkUpdateDocs<T>(IEnumerable<T> actions, string index) where T : class
+        {
+            _esClient.Bulk.BulkUpdateDocs<T>(IEnumerable<T> actions).
+        }*/
     }
 }
