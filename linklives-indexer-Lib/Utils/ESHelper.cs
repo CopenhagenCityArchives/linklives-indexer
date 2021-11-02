@@ -1,10 +1,8 @@
 ﻿using log4net;
 using Nest;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Linklives.Indexer.Utils
 {
@@ -71,9 +69,21 @@ namespace Linklives.Indexer.Utils
 
         }
 
-       /* public void BulkUpdateDocs<T>(IEnumerable<T> actions, string index) where T : class
+       /* public void BulkUpdateDocs<T>(IEnumerable<T> docs, string index) where T : class
         {
-            _esClient.Bulk.BulkUpdateDocs<T>(IEnumerable<T> actions).
+            var bulkResponse = _esClient.Bulk(b => b
+            .Index(index)
+            .UpdateMany<T>(docs, (descriptor, update) => descriptor
+                    .Id(update.Id)
+                    .Script(s => s
+                        .Source("ctx._source.person_appearance.add(params.pa)")
+                        .Lang(ScriptLang.Painless)
+                        .Params(p => p
+                            .Add("pa", update)
+                        )
+                    )
+                )
+            );
         }*/
     }
 }

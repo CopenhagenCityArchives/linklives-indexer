@@ -119,7 +119,6 @@ namespace Linklives.Indexer.Lifecourses
                     var sourcePAs = ReadSourcePAs(llPath, source, trsPath, pasInLifeCourses);
                     Log.Debug($"Indexing PAs from source {source.Source_name}");
                     indexHelper.BulkIndexDocs(sourcePAs, AliasIndexMapping["pas"]);
-                    esClient.
                     Log.Debug($"Finished fetching PAs from source {source.Source_name}. Took: {timer.Elapsed}");
                 }//);
                 Log.Info($"Finished indexing person appearances. Took {datasetTimer.Elapsed}");
