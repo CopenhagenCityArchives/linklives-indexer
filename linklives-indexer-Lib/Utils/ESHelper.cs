@@ -66,24 +66,6 @@ namespace Linklives.Indexer.Utils
                .Size(3000)
                .Timeout(TimeSpan.FromMinutes(1)))
                .Wait(TimeSpan.FromHours(3), onNext: response => { Log.Debug($"Page: {response.Page} containing: {response.Items.Count} items sucessfully indexed to {index}"); });
-
         }
-
-       /* public void BulkUpdateDocs<T>(IEnumerable<T> docs, string index) where T : class
-        {
-            var bulkResponse = _esClient.Bulk(b => b
-            .Index(index)
-            .UpdateMany<T>(docs, (descriptor, update) => descriptor
-                    .Id(update.Id)
-                    .Script(s => s
-                        .Source("ctx._source.person_appearance.add(params.pa)")
-                        .Lang(ScriptLang.Painless)
-                        .Params(p => p
-                            .Add("pa", update)
-                        )
-                    )
-                )
-            );
-        }*/
     }
 }
