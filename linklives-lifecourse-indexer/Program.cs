@@ -209,7 +209,12 @@ namespace Linklives.Indexer.Lifecourses
         private static IEnumerable<BasePA> ReadSourcePAs(string basePath, Source source, string trsPath, Dictionary<string,int> paFilter)
         {
             Log.Debug($"Loading standardized PAs into memory from {Path.Combine(basePath, source.File_reference)}");
-            var paDict = new DataSet<StandardPA>(Path.Combine(basePath, source.File_reference)).Read().Where(x => paFilter.ContainsKey($"{source.Source_id}-{x.Pa_id}")).ToDictionary(x => x.Pa_id);
+            var paDict = new DataSet<StandardPA>(Path.Combine(basePath, source.File_reference)).Read().Where(x => paFilter.Count == 0 || paFilter.ContainsKey($"{source.Source_id}-{x.Pa_id}")).ToDictionary(x => x.Pa_id);
+            if (paDict.Count == 0)
+            {
+                Log.Debug($"No standardized PAs matched the paFilter, skipping this source");
+                yield break;
+            }
             Log.Debug($"Reading transcribed PAs from {Path.Combine(trsPath, source.Original_data_reference)}");
             var trsSet = new DataSet<dynamic>(Path.Combine(trsPath, source.Original_data_reference));
             //Transcribed files can be pretty big so going over them row by row when matching to our standardised pa saves on memory.
