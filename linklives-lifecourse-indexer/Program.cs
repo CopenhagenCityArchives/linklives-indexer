@@ -130,7 +130,11 @@ namespace Linklives.Indexer.Lifecourses
                                                 .Timeout(TimeSpan.FromMinutes(1))
                                                 .IndexMany(paBatch)
                                             );
-
+                            if (bulkIndexPAsResponse.Errors)
+                            {
+                                Log.Warn("Could not index pas, skipping updates of the lifecourses for this batch");
+                                continue;
+                            }
                             var updates = new List<Tuple<int, BasePA>>();
 
                             foreach (BasePA pa in paBatch)
@@ -153,7 +157,13 @@ namespace Linklives.Indexer.Lifecourses
                                                     )
                                                 )
                                             );
-                            
+
+                            if (bulkUpdateLifecoursesResponse.Errors)
+                            {
+                                Log.Warn("Could not index lifecourses for a batch");
+                                continue;
+                            }
+
                             paBatch.Clear();
                         }
                     }
