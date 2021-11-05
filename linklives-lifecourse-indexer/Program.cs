@@ -112,7 +112,7 @@ namespace Linklives.Indexer.Lifecourses
                 Log.Info("Indexing person appearances");
                 var sources = new DataSet<Source>(Path.Combine(llPath, "auxilary_data", "sources", "sources.csv")).Read().ToList();
                 //Parallel.ForEach(sources, new ParallelOptions { MaxDegreeOfParallelism = 2 }, source =>
-                foreach (var source in sources.GetRange(0,sources.Count))
+                foreach (var source in sources)
                 {
                     Log.Debug($"Reading PAs from source {source.Source_name}");
                     var timer = Stopwatch.StartNew();
@@ -123,7 +123,7 @@ namespace Linklives.Indexer.Lifecourses
                     foreach(var curPa in sourcePAs)
                     {
                         paBatch.Add(curPa);
-                        if(paBatch.Count == 3000 || !sourcePAs.Any())
+                        if(paBatch.Count == 3000)
                         {
                             var bulkIndexPAsResponse = esClient.Bulk(b => b
                                                 .Index(AliasIndexMapping["pas"])
