@@ -69,7 +69,7 @@ namespace Linklives.Indexer.Lifecourses
                 var indextimer = Stopwatch.StartNew();
                 var datasetTimer = Stopwatch.StartNew();
                 Log.Info("Reading lifecourses from file, this may take some time...");
-                var lifecourses = maxEntries == 0 ? ReadLifeCourses(llPath).ToList() : ReadLifeCourses(llPath).Take(maxEntries).ToList();
+                var lifecourses = maxEntries == 0 ? ReadLifecoursesAndLinks(llPath).ToList() : ReadLifecoursesAndLinks(llPath, maxEntries).ToList();
                 Log.Info("Indexing lifecourses");
                 indexHelper.BulkIndexDocs(lifecourses, AliasIndexMapping["lifecourses"]);
                 Log.Info($"Finished indexing lifecourses. took {datasetTimer.Elapsed}");
@@ -80,7 +80,7 @@ namespace Linklives.Indexer.Lifecourses
                   Log.Info($"Discarded {beforecount - lifecourses.Count()} lifecourses while checking for duplicate keys. Took {datasetTimer.Elapsed}");
                   var lifecourseRepo = new EFLifeCourseRepository(dbContext);
                   int count = 1;
-                  foreach (var batch in lifecourses.Batch(10000))
+                  foreach (var batch in lifecourses.Batch(1000))
                   {
                       var timer = Stopwatch.StartNew();
          //             lifecourseRepo.Upsert(batch);
@@ -112,13 +112,54 @@ namespace Linklives.Indexer.Lifecourses
                 Log.Info("Indexing person appearances");
                 var sources = new DataSet<Source>(Path.Combine(llPath, "auxilary_data", "sources", "sources.csv")).Read().ToList();
                 //Parallel.ForEach(sources, new ParallelOptions { MaxDegreeOfParallelism = 2 }, source =>
-                foreach (var source in sources)
+                foreach (var source in sources.GetRange(0,sources.Count))
                 {
                     Log.Debug($"Reading PAs from source {source.Source_name}");
                     var timer = Stopwatch.StartNew();
                     var sourcePAs = ReadSourcePAs(llPath, source, trsPath, pasInLifeCourses);
                     Log.Debug($"Indexing PAs from source {source.Source_name}");
-                    indexHelper.BulkIndexDocs(sourcePAs, AliasIndexMapping["pas"]);
+                    //indexHelper.BulkIndexDocs(sourcePAs, AliasIndexMapping["pas"]);
+                    var paBatch = new List<BasePA>();
+                    foreach(var curPa in sourcePAs)
+                    {
+                        paBatch.Add(curPa);
+                        if(paBatch.Count == 3000 || !sourcePAs.Any())
+                        {
+                            var bulkIndexPAsResponse = esClient.Bulk(b => b
+                                                .Index(AliasIndexMapping["pas"])
+                                                .Timeout(TimeSpan.FromMinutes(1))
+                                                .IndexMany(paBatch)
+                                            );
+
+                            var updates = new List<Tuple<int, BasePA>>();
+
+                            foreach (BasePA pa in paBatch)
+                            {
+                                if (pasInLifeCourses.ContainsKey(pa.Key))
+                                {
+                                    updates.Add(new Tuple<int, BasePA>(pasInLifeCourses[pa.Key], pa));
+                                }
+                            }
+
+                            var bulkUpdateLifecoursesResponse = esClient.Bulk(b => b
+                                                .Index(AliasIndexMapping["lifecourses"])
+                                                .UpdateMany(updates, (descriptor, update) => descriptor
+                                                    .Id(update.Item1)
+                                                    .Script(s => s
+                                                        .Source("ctx._source.person_appearance.add(params.pa)")
+                                                        .Params(p => p
+                                                            .Add("pa", update.Item2)
+                                                        )
+                                                    )
+                                                )
+                                            );
+                            
+                            paBatch.Clear();
+                        }
+                    }
+                    
+
+
                     Log.Debug($"Finished fetching PAs from source {source.Source_name}. Took: {timer.Elapsed}");
                 }//);
                 Log.Info($"Finished indexing person appearances. Took {datasetTimer.Elapsed}");
@@ -144,6 +185,7 @@ namespace Linklives.Indexer.Lifecourses
                 }
             }
         }
+        
 
         private static IDictionary<string, string> SetUpNewIndexes(ESHelper indexHelper)
         {
@@ -156,9 +198,9 @@ namespace Linklives.Indexer.Lifecourses
         }
         private static IEnumerable<BasePA> ReadSourcePAs(string basePath, Source source, string trsPath, Dictionary<string,int> paFilter)
         {
-            Log.Info($"Loading standardized PAs into memory");
-            var paDict = new DataSet<StandardPA>(Path.Combine(basePath, source.File_reference)).Read().ToDictionary(x => x.Pa_id);
-            Log.Info($"Reading transcribed PAs from " + Path.Combine(trsPath, source.Original_data_reference));
+            Log.Debug($"Loading standardized PAs into memory from {Path.Combine(basePath, source.File_reference)}");
+            var paDict = new DataSet<StandardPA>(Path.Combine(basePath, source.File_reference)).Read().Where(x => paFilter.ContainsKey($"{source.Source_id}-{x.Pa_id}")).ToDictionary(x => x.Pa_id);
+            Log.Debug($"Reading transcribed PAs from {Path.Combine(trsPath, source.Original_data_reference)}");
             var trsSet = new DataSet<dynamic>(Path.Combine(trsPath, source.Original_data_reference));
             //Transcribed files can be pretty big so going over them row by row when matching to our standardised pa saves on memory.
             foreach (var transcribtion in trsSet.Read())
@@ -167,6 +209,7 @@ namespace Linklives.Indexer.Lifecourses
                 try
                 {
                     var trsPa = new TranscribedPA(transcribtion, source.Source_id);
+                    if(!paDict.ContainsKey(trsPa.Pa_id)) { continue; }
                     pa = BasePA.Create(source, paDict[trsPa.Pa_id], trsPa);
                     pa.InitKey();          
                 }
@@ -183,28 +226,58 @@ namespace Linklives.Indexer.Lifecourses
                 yield return pa;
             }
         }
-        private static IEnumerable<LifeCourse> ReadLifeCourses(string basepath)
-        {
+        private static IEnumerable<LifeCourse> ReadLifecoursesAndLinks(string basepath, int lifecourseCount = 0)
+        { 
+            Log.Debug($"Reading lifecourses into memory from {Path.Combine(basepath, "life - courses", "life_courses.csv")}");
             var lifecoursesDataset = new DataSet<LifeCourse>(Path.Combine(basepath, "life-courses", "life_courses.csv"));
-            Log.Debug("Uniquefying links");
-            var timer = Stopwatch.StartNew();
-            var links = MakeLinksUnique(new DataSet<Link>(Path.Combine(basepath, "links","links.csv")).Read(true));
-            Log.Debug($"Finished uniquefying links. Took: {timer.Elapsed}");
-            timer.Stop();
+            int rowsRead = 0;
+            var linkIdsInLifecourses = new Dictionary<string,bool>();
+            var lifecourses = new List<LifeCourse>();
             foreach (var lifecourse in lifecoursesDataset.Read())
             {
-                //TODO: Can we find the links in one go instead of doing 2 queries? It might perform better.
-                var linkIds = lifecourse.Link_ids.Split(',');
+                rowsRead++;
+                if(lifecourseCount != 0 && rowsRead > lifecourseCount) { break; }
+                foreach(string linkId in lifecourse.Link_ids.Split(','))
+                {
+                    linkIdsInLifecourses.TryAdd(linkId, true);
+                }
+                lifecourses.Add(lifecourse);
+            }
+
+            Log.Debug("Reading links");
+            var linksDataset = new DataSet<Link>(Path.Combine(basepath, "links", "links.csv"));
+            var links = new List<Link>();
+            foreach (var link in linksDataset.Read())
+            {
+                if (linkIdsInLifecourses.ContainsKey(link.Link_id))
+                {
+                    link.InitKey();
+                    links.Add(link);
+                }
+            }
+            
+            Log.Debug($"Uniquefying links");
+            var timer = Stopwatch.StartNew();
+            var uniqueLinks = MakeLinksUnique(links);
+            links.Clear();
+            linkIdsInLifecourses.Clear();
+            Log.Debug($"Finished uniquefying links. Took: {timer.Elapsed}");
+            timer.Stop();
+
+            Log.Debug($"Combining lifecourses and links");
+            foreach (var lifecourse in lifecourses)
+            {
                 lifecourse.Links = new List<Link>();
+                var linkIds = lifecourse.Link_ids.Split(',');
                 foreach (var id in linkIds)
                 {
-                    lifecourse.Links.Add(links[id]);
+                    lifecourse.Links.Add(uniqueLinks[id]);
                 }
                 lifecourse.InitKey();
                 yield return lifecourse;
             }
         }
-        private static Dictionary<string, Link> MakeLinksUnique(IEnumerable<Link> links)
+        private static Dictionary<string, Link> MakeLinksUnique(List<Link> links)
         {
             var groups = links.GroupBy(l => l.Key);
             var result = new Dictionary<string, Link>();
