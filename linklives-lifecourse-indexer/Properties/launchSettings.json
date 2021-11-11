@@ -2,7 +2,7 @@
   "profiles": {
     "linklives-lifecourse-indexer": {
       "commandName": "Project",
-      "commandLineArgs": "--es-host https://data-dev.link-lives.dk --ll-path C:\\temp\\LL_data_v1.0\\LL_data --trs-path C:\\temp\\transcribed_data_v1.0 --db-conn server=***REMOVED***;***REMOVED***;pwd=***REMOVED***;database=***REMOVED*** --max-entries 0"
+      "commandLineArgs": "--es-host http://127.0.0.1:9200 --ll-path D:\\link-lives-data-demo\\LL_data_v1.0\\LL_data --trs-path D:\\link-lives-data-demo\\transcribed_data_v1.0 --db-conn server=127.0.0.1;uid=root;pwd=123456;database=***REMOVED*** --max-entries 1000"
     },
     "Docker": {
       "commandName": "Docker"
