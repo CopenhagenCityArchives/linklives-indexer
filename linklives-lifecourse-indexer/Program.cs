@@ -133,11 +133,18 @@ namespace Linklives.Indexer.Lifecourses
                             paBatch.Clear();
                         }
                     }
-                    
 
+                    // End of iteration, flush
+                    if(paBatch.Count > 0)
+                    {
+                        indexHelper.IndexManyDocs(paBatch, AliasIndexMapping["pas"]);
+                        UpdateLifecourses(esClient, paBatch, pasInLifeCourses, AliasIndexMapping["lifecourses"]);
+                        paBatch.Clear();
+                    }
 
-                    Log.Debug($"Finished fetching PAs from source {source.Source_name}. Took: {timer.Elapsed}");
-                }//);
+                    Log.Debug($"Finished indexing PAs from source {source.Source_name}. Took: {timer.Elapsed}");
+                }
+                //);
                 Log.Info($"Finished indexing person appearances. Took {datasetTimer.Elapsed}");
                 datasetTimer.Restart();
 
