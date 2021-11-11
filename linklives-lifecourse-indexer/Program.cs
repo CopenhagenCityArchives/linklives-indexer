@@ -168,6 +168,26 @@ namespace Linklives.Indexer.Lifecourses
                 }
             }
         }
+
+        private static void BatchInsertDBRows<T>(DbContextOptions<LinklivesContext> contextOptions, IEnumerable<LifeCourse> entities) where T: class
+        {
+            LinklivesContext localContext = new LinklivesContext(contextOptions);
+            localContext.ChangeTracker.AutoDetectChangesEnabled = false;
+
+            var newEntitiesIDs = entities.Select(u => u.Key).Distinct().ToArray();
+            var entitiesInDb = localContext.LifeCourses.Where(u => newEntitiesIDs.Contains(u.Key))
+                                           .Select(u => u.Key).ToArray();
+            var usersNotInDb = entities.Where(u => !entitiesInDb.Contains(u.Key));
+            foreach (LifeCourse lc in usersNotInDb)
+            {
+                localContext.Add(lc);
+            }
+
+            localContext.SaveChanges();
+
+            localContext.Dispose();
+        }
+
         
 
         private static IDictionary<string, string> SetUpNewIndexes(ESHelper indexHelper)
