@@ -128,45 +128,8 @@ namespace Linklives.Indexer.Lifecourses
                         paBatch.Add(curPa);
                         if(paBatch.Count == 3000)
                         {
-                            var bulkIndexPAsResponse = esClient.Bulk(b => b
-                                                .Index(AliasIndexMapping["pas"])
-                                                .Timeout(TimeSpan.FromMinutes(1))
-                                                .IndexMany(paBatch)
-                                            );
-                            if (bulkIndexPAsResponse.Errors)
-                            {
-                                Log.Warn("Could not index pas, skipping updates of the lifecourses for this batch");
-                                continue;
-                            }
-                            var updates = new List<Tuple<int, BasePA>>();
-
-                            foreach (BasePA pa in paBatch)
-                            {
-                                if (pasInLifeCourses.ContainsKey(pa.Key))
-                                {
-                                    updates.Add(new Tuple<int, BasePA>(pasInLifeCourses[pa.Key], pa));
-                                }
-                            }
-
-                            var bulkUpdateLifecoursesResponse = esClient.Bulk(b => b
-                                                .Index(AliasIndexMapping["lifecourses"])
-                                                .UpdateMany(updates, (descriptor, update) => descriptor
-                                                    .Id(update.Item1)
-                                                    .Script(s => s
-                                                        .Source("ctx._source.person_appearance.add(params.pa)")
-                                                        .Params(p => p
-                                                            .Add("pa", update.Item2)
-                                                        )
-                                                    )
-                                                )
-                                            );
-
-                            if (bulkUpdateLifecoursesResponse.Errors)
-                            {
-                                Log.Warn("Could not index lifecourses for a batch");
-                                continue;
-                            }
-
+                            indexHelper.IndexManyDocs(paBatch, AliasIndexMapping["pas"]);
+                            UpdateLifecourses(esClient, paBatch, pasInLifeCourses, AliasIndexMapping["lifecourses"]);
                             paBatch.Clear();
                         }
                     }
