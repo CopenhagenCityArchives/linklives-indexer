@@ -38,7 +38,7 @@ All this is done using Travis-CI.
 
 ## Running
 ### Linklives-lifecourse-indexer
-``docker run linklives-lifecourse-indexer --es-host https://data-dev.link-lives.dk --path /app/link-lives/LL_data_v1.0.dev0/development --db-conn server=***REMOVED***;***REMOVED***;pwd=***REMOVED***;database=***REMOVED*** --max-entries 10``
+``docker run linklives-lifecourse-indexer --es-host https://data-dev.link-lives.dk --path /app/link-lives/LL_data_v1.0.dev0/development --db-conn server=localhost;uid=root;pwd=123456;database=***REMOVED*** --max-entries 10``
 
 ### Data
 The WP3 data is currently delivered by hand doing like this:
