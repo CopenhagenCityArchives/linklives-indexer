@@ -139,10 +139,15 @@ namespace Linklives.Indexer.Lifecourses
                     {
                         indexHelper.IndexManyDocs(paBatch, AliasIndexMapping["pas"]);
                         UpdateLifecourses(esClient, paBatch, pasInLifeCourses, AliasIndexMapping["lifecourses"]);
+
+                        foreach (var pa in paBatch) {
+                            pasInLifeCourses.Remove(pa.Key);
+                        }
                         paBatch.Clear();
                     }
 
                     Log.Debug($"Finished indexing PAs from source {source.Source_name}. Took: {timer.Elapsed}");
+                    Log.Debug($"PAs in lifecourses remaining: {pasInLifeCourses.Count}");
                 }
                 //);
                 Log.Info($"Finished indexing person appearances. Took {datasetTimer.Elapsed}");
