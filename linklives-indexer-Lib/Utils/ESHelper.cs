@@ -67,5 +67,19 @@ namespace Linklives.Indexer.Utils
                .Timeout(TimeSpan.FromMinutes(1)))
                .Wait(TimeSpan.FromHours(3), onNext: response => { Log.Debug($"Page: {response.Page} containing: {response.Items.Count} items sucessfully indexed to {index}"); });
         }
+
+        public void IndexManyDocs<T>(IEnumerable<T> docs, string index) where T : class
+        {
+            Log.Debug($"Indexing documents in index {index}");
+            var bulkIndexPAsResponse = _esClient.Bulk(b => b
+                                                .Index(index)
+                                                .Timeout(TimeSpan.FromMinutes(1))
+                                                .IndexMany(docs)
+                                            );
+            if (bulkIndexPAsResponse.Errors)
+            {
+                Log.Warn("Could not index documents in bulk indexation");
+            }
+        }
     }
 }
