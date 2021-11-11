@@ -115,6 +115,7 @@ namespace Linklives.Indexer.Lifecourses
                 var sources = new DataSet<Source>(Path.Combine(llPath, "auxilary_data", "sources", "sources.csv")).Read().ToList();
                 //Parallel.ForEach(sources, new ParallelOptions { MaxDegreeOfParallelism = 2 }, source =>
                 foreach (var source in sources)
+                //var source = sources[8];
                 {
                     Log.Debug($"Reading PAs from source {source.Source_name}");
                     var timer = Stopwatch.StartNew();
