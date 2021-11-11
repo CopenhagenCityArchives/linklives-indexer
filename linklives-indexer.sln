@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "linklives-indexer-lifecours
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "linklives-indexer-transcribed", "linklives-transcribed-indexer\linklives-indexer-transcribed.csproj", "{DE7A61D2-7561-482A-BD34-E238BC133E4D}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "linklives-lib", "linklives-lib\linklives-lib\linklives-lib.csproj", "{F6BCD880-DB7F-461F-B173-05FBB8F5F3F3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{DE7A61D2-7561-482A-BD34-E238BC133E4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DE7A61D2-7561-482A-BD34-E238BC133E4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DE7A61D2-7561-482A-BD34-E238BC133E4D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6BCD880-DB7F-461F-B173-05FBB8F5F3F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6BCD880-DB7F-461F-B173-05FBB8F5F3F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6BCD880-DB7F-461F-B173-05FBB8F5F3F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6BCD880-DB7F-461F-B173-05FBB8F5F3F3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
