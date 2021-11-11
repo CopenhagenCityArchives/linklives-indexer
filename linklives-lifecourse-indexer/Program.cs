@@ -113,8 +113,8 @@ namespace Linklives.Indexer.Lifecourses
             { 
                 Log.Info("Indexing person appearances");
                 var sources = new DataSet<Source>(Path.Combine(llPath, "auxilary_data", "sources", "sources.csv")).Read().ToList();
-                //Parallel.ForEach(sources, new ParallelOptions { MaxDegreeOfParallelism = 2 }, source =>
-                foreach (var source in sources)
+                Parallel.ForEach(sources, new ParallelOptions { MaxDegreeOfParallelism = 6 }, source =>
+                //foreach (var source in sources)
                 //var source = sources[8];
                 {
                     Log.Debug($"Reading PAs from source {source.Source_name}");
@@ -149,7 +149,7 @@ namespace Linklives.Indexer.Lifecourses
                     Log.Debug($"Finished indexing PAs from source {source.Source_name}. Took: {timer.Elapsed}");
                     Log.Debug($"PAs in lifecourses remaining: {pasInLifeCourses.Count}");
                 }
-                //);
+                );
                 Log.Info($"Finished indexing person appearances. Took {datasetTimer.Elapsed}");
                 datasetTimer.Restart();
 
@@ -259,7 +259,7 @@ namespace Linklives.Indexer.Lifecourses
                 catch (Exception e)
                 {
                     //If for some reason we cant parse a PA we skip it and log the error.
-                    Log.Error($"Failed to read pa with id {transcribtion.pa_id} reason: {e.Message}", e);
+                    Log.Error($"Failed to read pa with id {transcribtion.Pa_id} reason: {e.Message}", e);
                     continue;
                 }
 
