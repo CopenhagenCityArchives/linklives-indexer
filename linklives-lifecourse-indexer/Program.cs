@@ -75,21 +75,22 @@ namespace Linklives.Indexer.Lifecourses
                 indexHelper.BulkIndexDocs(lifecourses, AliasIndexMapping["lifecourses"]);
                 Log.Info($"Finished indexing lifecourses. took {datasetTimer.Elapsed}");
                 datasetTimer.Restart();
-            /*      Log.Info("Inserting lifecourses to DB");
-                  var beforecount = lifecourses.Count();
-                  lifecourses = lifecourses.GroupBy(x => x.Key).Select(x => x.First()).ToList();
-                  Log.Info($"Discarded {beforecount - lifecourses.Count()} lifecourses while checking for duplicate keys. Took {datasetTimer.Elapsed}");
-                  var lifecourseRepo = new EFLifeCourseRepository(dbContext);
-                  int count = 1;
-                  foreach (var batch in lifecourses.Batch(1000))
-                  {
-                      var timer = Stopwatch.StartNew();
-         //             lifecourseRepo.Upsert(batch);
-         //             lifecourseRepo.Save();
-                      Log.Debug($"Upserted batch #{count} containing {batch.Count()} lifecourses to db. Took {timer.Elapsed}");
-                      count++;
-                  }
-            */
+                Log.Info("Inserting lifecourses to DB");
+                var beforecount = lifecourses.Count();
+                lifecourses = lifecourses.GroupBy(x => x.Key).Select(x => x.First()).ToList();
+                Log.Info($"Discarded {beforecount - lifecourses.Count()} lifecourses while checking for duplicate keys. Took {datasetTimer.Elapsed}");
+                var lifecourseRepo = new EFLifeCourseRepository(dbContext);
+                int count = 1;
+                foreach (var batch in lifecourses.Batch(200))
+                {
+                    var timer = Stopwatch.StartNew();
+                      
+                    BatchInsertDBRows<LifeCourse>(optionsBuilder.Options, batch);
+                      
+                    Log.Debug($"Upserted batch #{count} containing {batch.Count()} lifecourses to db. Took {timer.Elapsed}");
+                    count++;
+                }
+            
                 var pasInLifeCourses = new Dictionary<string, int>();
 
                 // Build a list of pa-ids in lifecourses if max-entries is set
