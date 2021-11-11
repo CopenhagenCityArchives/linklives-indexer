@@ -3,16 +3,14 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <RootNamespace>Linklives.Indexer.Lifecourses</RootNamespace>
+    <RootNamespace>Linklives.Indexer.Transcribed</RootNamespace>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CsvHelper" Version="27.1.1" />
-    <PackageReference Include="LinkLivesLib" Version="1.0.7980.26995" />
     <PackageReference Include="log4net" Version="2.0.12" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.11.1" />
-    <PackageReference Include="morelinq" Version="3.3.2" />
     <PackageReference Include="NEST" Version="7.15.1" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.21308.1" />
   </ItemGroup>
