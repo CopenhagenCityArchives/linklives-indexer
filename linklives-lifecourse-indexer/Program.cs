@@ -54,12 +54,13 @@ namespace Linklives.Indexer.Lifecourses
             var transcribedPARepository = new ESTranscribedPaRepository(esClient);
             #endregion
             #region EF Setup
+            var optionsBuilder = new DbContextOptionsBuilder<LinklivesContext>();
+            optionsBuilder.UseMySQL(dbConn);
+            optionsBuilder.EnableSensitiveDataLogging();
             //This context factory is required by the EF extensions used in linklives.lib for bulk upserts
             EntityFrameworkManager.ContextFactory = context =>
             {
-                var optionsBuilder = new DbContextOptionsBuilder<LinklivesContext>();
-                optionsBuilder.UseMySQL(dbConn);
-                optionsBuilder.EnableSensitiveDataLogging();
+
                 return new LinklivesContext(optionsBuilder.Options);
             };
             var dbContext = (LinklivesContext)EntityFrameworkManager.ContextFactory.Invoke(null);
