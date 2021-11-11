@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
@@ -10,9 +10,12 @@
 
   <ItemGroup>
     <PackageReference Include="CsvHelper" Version="27.1.1" />
-    <PackageReference Include="LinkLivesLib" Version="1.0.7980.26995" />
     <PackageReference Include="log4net" Version="2.0.12" />
     <PackageReference Include="NEST" Version="7.15.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\linklives-lib\linklives-lib\linklives-lib.csproj" />
   </ItemGroup>
 
 </Project>
