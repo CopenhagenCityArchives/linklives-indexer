@@ -174,6 +174,7 @@ namespace Linklives.Indexer.Lifecourses
             }
         }
 
+        //TODO Document
         private static void BatchInsertDBRows<T>(DbContextOptions<LinklivesContext> contextOptions, IEnumerable<LifeCourse> entities) where T: class
         {
             LinklivesContext localContext = new LinklivesContext(contextOptions);
