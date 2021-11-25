@@ -130,6 +130,11 @@ namespace Linklives.Indexer.Lifecourses
                         {
                             indexHelper.IndexManyDocs(paBatch, AliasIndexMapping["pas"]);
                             UpdateLifecourses(esClient, paBatch, pasInLifeCourses, AliasIndexMapping["lifecourses"]);
+
+                            foreach (var pa in paBatch)
+                            {
+                                pasInLifeCourses.Remove(pa.Key);
+                            }
                             paBatch.Clear();
                         }
                     }
@@ -181,7 +186,8 @@ namespace Linklives.Indexer.Lifecourses
             localContext.ChangeTracker.AutoDetectChangesEnabled = false;
 
             var newEntitiesIDs = entities.Select(u => u.Key).Distinct().ToArray();
-            var entitiesInDb = localContext.LifeCourses.Where(u => newEntitiesIDs.Contains(u.Key))
+            var entitiesInDb = localContext.LifeCourses.Load();
+                Where(u => newEntitiesIDs.Contains(u.Key))
                                            .Select(u => u.Key).ToArray();
             var usersNotInDb = entities.Where(u => !entitiesInDb.Contains(u.Key));
             foreach (LifeCourse lc in usersNotInDb)
@@ -221,7 +227,7 @@ namespace Linklives.Indexer.Lifecourses
 
             if (bulkUpdateLifecoursesResponse.Errors)
             {
-                Log.Warn("Could not index lifecourses for a batch");
+                Log.Warn($"Could not index lifecourses for a batch {bulkUpdateLifecoursesResponse.DebugInformation}");
             }
         }
         
@@ -244,6 +250,19 @@ namespace Linklives.Indexer.Lifecourses
                 Log.Debug($"No standardized PAs matched the paFilter, skipping this source");
                 yield break;
             }
+            #region skip transcribed
+            foreach (KeyValuePair<int, StandardPA> spa in paDict)
+            {
+                var pa = BasePA.Create(source, spa.Value, null);
+                pa.InitKey();
+                if (paFilter.Count > 0 && !paFilter.ContainsKey(pa.Key)) { continue; }
+                yield return pa;
+            }
+            #endregion
+            
+
+            #region use transcribed
+            /*
             Log.Debug($"Reading transcribed PAs from {Path.Combine(trsPath, source.Original_data_reference)}");
             var trsSet = new DataSet<dynamic>(Path.Combine(trsPath, source.Original_data_reference));
             //Transcribed files can be pretty big so going over them row by row when matching to our standardised pa saves on memory.
@@ -269,6 +288,8 @@ namespace Linklives.Indexer.Lifecourses
 
                 yield return pa;
             }
+            */
+            #endregion
         }
         private static IEnumerable<LifeCourse> ReadLifecoursesAndLinks(string basepath, int lifecourseCount = 0)
         { 
