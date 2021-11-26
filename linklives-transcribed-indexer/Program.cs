@@ -48,24 +48,27 @@ namespace Linklives.Indexer.Transcribed
             var indexName = indexHelper.CreateNewIndex<dynamic>(indexAlias, false);
             Log.Info($"Index {indexName} created");
             var indextimer = Stopwatch.StartNew();
-            indexHelper.BulkIndexDocs<dynamic>(GetPas(path), indexName);
+            indexHelper.BulkIndexDocs<dynamic>(GetPas(path, maxEntries), indexName);
             indextimer.Stop();
             Log.Info($"Finished indexing all avilable files. Took: {indextimer.Elapsed}");
             Log.Info($"Activating new index: {indexName}");
             indexHelper.ActivateNewIndex(indexAlias, indexName);
         }
 
-        private static IEnumerable<TranscribedPA> GetPas(string path)
+        private static IEnumerable<TranscribedPA> GetPas(string path, int maxEntries)
         {
             var sources = GetSources();
             foreach (var source in sources)
             {
+                int yieldedEntries = 0;
                 var filepath = $"{path}\\{source.File_reference}";
                 Log.Debug($"Reading PAs from file {filepath}");
                 foreach (var item in new DataSet<dynamic>(filepath).Read())
                 {
+                    if(maxEntries > 0 && yieldedEntries == maxEntries) { break; }
                     var pa = new TranscribedPA (item, source.Source_id);
                     pa.InitKey();
+                    yieldedEntries++;
                     yield return pa;
                 }
             }
