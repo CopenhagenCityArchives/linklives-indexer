@@ -82,7 +82,7 @@ namespace Linklives.Indexer.Transcribed
             yield return new Source { Source_id = 6, File_reference = "transcribed_sources\\census\\1860_20190000.csv" };
             yield return new Source { Source_id = 7, File_reference = "transcribed_sources\\census\\1880_20190000.csv" };
             yield return new Source { Source_id = 8, File_reference = "transcribed_sources\\census\\1885_20190000.csv" };
-            yield return new Source { Source_id = 9, File_reference = "transcribed_sources\\census\\1901_20190000.csv" };
+            yield return new Source { Source_id = 9, File_reference = "transcribed_sources\\census\\1901_20210916.csv" };
 
             yield return new Source { Source_id = 10, File_reference = "transcribed_sources\\CBP\\CBP_20210309.csv" };
 
