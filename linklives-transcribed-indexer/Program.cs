@@ -61,7 +61,7 @@ namespace Linklives.Indexer.Transcribed
             foreach (var source in sources)
             {
                 int yieldedEntries = 0;
-                var filepath = $"{path}\\{source.File_reference}";
+                var filepath = Path.Join(path, source.File_reference);
                 Log.Debug($"Reading PAs from file {filepath}");
                 foreach (var item in new DataSet<dynamic>(filepath).Read())
                 {
