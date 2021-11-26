@@ -76,25 +76,25 @@ namespace Linklives.Indexer.Transcribed
         private static IEnumerable<Source> GetSources()
         {
             //TODO: Get these from the new sources file when it becomes available, instead of hardcoding them.
-            yield return new Source { Source_id = 0, File_reference = "transcribed_sources\\census\\1787_20190000.csv" };
-            yield return new Source { Source_id = 1, File_reference = "transcribed_sources\\census\\1801_20190000.csv" };
-            yield return new Source { Source_id = 2, File_reference = "transcribed_sources\\census\\1834_20190000.csv" };
-            yield return new Source { Source_id = 3, File_reference = "transcribed_sources\\census\\1840_20190000.csv" };
-            yield return new Source { Source_id = 4, File_reference = "transcribed_sources\\census\\1845_20190000.csv" };
-            yield return new Source { Source_id = 5, File_reference = "transcribed_sources\\census\\1850_20190000.csv" };
-            yield return new Source { Source_id = 6, File_reference = "transcribed_sources\\census\\1860_20190000.csv" };
-            yield return new Source { Source_id = 7, File_reference = "transcribed_sources\\census\\1880_20190000.csv" };
-            yield return new Source { Source_id = 8, File_reference = "transcribed_sources\\census\\1885_20190000.csv" };
-            yield return new Source { Source_id = 9, File_reference = "transcribed_sources\\census\\1901_20210916.csv" };
+            yield return new Source { Source_id = 0, File_reference = Path.Join("transcribed_sources", "census", "1787_20190000.csv") };
+            yield return new Source { Source_id = 1, File_reference = Path.Join("transcribed_sources", "census", "1801_20190000.csv") };
+            yield return new Source { Source_id = 2, File_reference = Path.Join("transcribed_sources", "census", "1834_20190000.csv") };
+            yield return new Source { Source_id = 3, File_reference = Path.Join("transcribed_sources", "census", "1840_20190000.csv") };
+            yield return new Source { Source_id = 4, File_reference = Path.Join("transcribed_sources", "census", "1845_20190000.csv") };
+            yield return new Source { Source_id = 5, File_reference = Path.Join("transcribed_sources", "census", "1850_20190000.csv") };
+            yield return new Source { Source_id = 6, File_reference = Path.Join("transcribed_sources", "census", "1860_20190000.csv") };
+            yield return new Source { Source_id = 7, File_reference = Path.Join("transcribed_sources", "census", "1880_20190000.csv") };
+            yield return new Source { Source_id = 8, File_reference = Path.Join("transcribed_sources", "census", "1885_20190000.csv") };
+            yield return new Source { Source_id = 9, File_reference = Path.Join("transcribed_sources", "census", "1901_20210916.csv") };
 
-            yield return new Source { Source_id = 10, File_reference = "transcribed_sources\\CBP\\CBP_20210309.csv" };
+            yield return new Source { Source_id = 10, File_reference = Path.Join("transcribed_sources", "CBP", "CBP_20210309.csv") };
 
-            yield return new Source { Source_id = 11, File_reference = "transcribed_sources\\PR\\by_PA\\burial.csv" };
-            yield return new Source { Source_id = 12, File_reference = "transcribed_sources\\PR\\by_PA\\baptism.csv" };
-            yield return new Source { Source_id = 13, File_reference = "transcribed_sources\\PR\\by_PA\\marriage.csv" };
-            yield return new Source { Source_id = 14, File_reference = "transcribed_sources\\PR\\by_PA\\confirmation.csv" };
-            yield return new Source { Source_id = 15, File_reference = "transcribed_sources\\PR\\by_PA\\departure.csv" };
-            yield return new Source { Source_id = 16, File_reference = "transcribed_sources\\PR\\by_PA\\arrival.csv" };
+            yield return new Source { Source_id = 11, File_reference = Path.Join("transcribed_sources", "PR", "by_PA", "burial.csv") };
+            yield return new Source { Source_id = 12, File_reference = Path.Join("transcribed_sources", "PR", "by_PA", "baptism.csv") };
+            yield return new Source { Source_id = 13, File_reference = Path.Join("transcribed_sources", "PR", "by_PA", "marriage.csv") };
+            yield return new Source { Source_id = 14, File_reference = Path.Join("transcribed_sources", "PR", "by_PA", "confirmation.csv") };
+            yield return new Source { Source_id = 15, File_reference = Path.Join("transcribed_sources", "PR", "by_PA", "departure.csv") };
+            yield return new Source { Source_id = 16, File_reference = Path.Join("transcribed_sources", "PR", "by_PA", "arrival.csv") };
 
         }
     }
