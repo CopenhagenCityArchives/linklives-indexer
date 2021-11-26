@@ -65,8 +65,14 @@ namespace Linklives.Indexer.Utils
                .RefreshOnCompleted()
                .MaxDegreeOfParallelism(Environment.ProcessorCount)
                .Size(3000)
-               .Timeout(TimeSpan.FromMinutes(1)))
-               .Wait(TimeSpan.FromHours(3), onNext: response => { Log.Debug($"Page: {response.Page} containing: {response.Items.Count} items sucessfully indexed to {index}"); });
+               .Timeout(TimeSpan.FromMinutes(1))
+               .DroppedDocumentCallback((item, Document) =>
+               {
+                   Log.Debug($"The document {item} can not be indexed. Bulk all indexing will be halted.");
+               }))
+               .Wait(TimeSpan.FromHours(3),
+                    onNext: response => { Log.Debug($"Page: {response.Page} containing: {response.Items.Count} items sucessfully indexed to {index}");}
+               );              
         }
 
         public void IndexManyDocs<T>(IEnumerable<T> docs, string index) where T : class
