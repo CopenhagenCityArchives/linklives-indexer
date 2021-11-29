@@ -2,7 +2,7 @@ os: linux
 dist: xenial
 
 language: csharp
-solution: linklives-api.sln
+solution: linklives-indexer.sln
 
 services:
   - docker
