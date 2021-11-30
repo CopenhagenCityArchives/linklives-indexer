@@ -91,7 +91,7 @@ namespace Linklives.Indexer.Lifecourses
                     count++;
                 }
             
-                var pasInLifeCourses = new Dictionary<string, int>();
+                var pasInLifeCourses = new Dictionary<string, List<int>>();
 
                 // Build a list of pa-ids in lifecourses if max-entries is set
                 if(maxEntries > 0)
@@ -100,7 +100,14 @@ namespace Linklives.Indexer.Lifecourses
                     {
                         foreach(string paKey in lc.Source_ids.Split(",").Zip(lc.Pa_ids.Split(","), (first, second) => first + "-" + second))
                         {
-                            pasInLifeCourses.TryAdd(paKey, lc.Life_course_id);
+                            if (!pasInLifeCourses.ContainsKey(paKey))
+                            {
+                                pasInLifeCourses.Add(paKey, new List<int>() { lc.Life_course_id });
+                            }
+                            else
+                            {
+                                pasInLifeCourses[paKey].Add(lc.Life_course_id);
+                            }
                         }
                     }
                 }
@@ -131,10 +138,6 @@ namespace Linklives.Indexer.Lifecourses
                             indexHelper.IndexManyDocs(paBatch, AliasIndexMapping["pas"]);
                             UpdateLifecourses(esClient, paBatch, pasInLifeCourses, AliasIndexMapping["lifecourses"]);
 
-                            foreach (var pa in paBatch)
-                            {
-                                pasInLifeCourses.Remove(pa.Key);
-                            }
                             paBatch.Clear();
                         }
                     }
@@ -145,14 +148,10 @@ namespace Linklives.Indexer.Lifecourses
                         indexHelper.IndexManyDocs(paBatch, AliasIndexMapping["pas"]);
                         UpdateLifecourses(esClient, paBatch, pasInLifeCourses, AliasIndexMapping["lifecourses"]);
 
-                        foreach (var pa in paBatch) {
-                            pasInLifeCourses.Remove(pa.Key);
-                        }
                         paBatch.Clear();
                     }
 
                     Log.Debug($"Finished indexing PAs from source {source.Source_name}. Took: {timer.Elapsed}");
-                    Log.Debug($"PAs in lifecourses remaining: {pasInLifeCourses.Count}");
                 }
                 );
                 Log.Info($"Finished indexing person appearances. Took {datasetTimer.Elapsed}");
@@ -200,15 +199,15 @@ namespace Linklives.Indexer.Lifecourses
             localContext.Dispose();*/
         }
 
-        private static void UpdateLifecourses(ElasticClient esClient, IEnumerable<BasePA> paBatch, IDictionary<string, int> pasInLifeCourses, string index)
+        private static void UpdateLifecourses(ElasticClient esClient, IEnumerable<BasePA> paBatch, IDictionary<string, List<int>> pasInLifeCourses, string index)
         {
             var updates = new List<Tuple<int, BasePA>>();
 
             foreach (BasePA pa in paBatch)
             {
-                if (pasInLifeCourses.ContainsKey(pa.Key))
+                foreach(int lcId in pasInLifeCourses[pa.Key])
                 {
-                    updates.Add(new Tuple<int, BasePA>(pasInLifeCourses[pa.Key], pa));
+                    updates.Add(new Tuple<int, BasePA>(lcId, pa));
                 }
             }
             Log.Debug($"Updating {updates.Count} lifecourses with pas");
@@ -241,7 +240,7 @@ namespace Linklives.Indexer.Lifecourses
             result["sources"] = indexHelper.CreateNewIndex<Source>("sources");
             return result;
         }
-        private static IEnumerable<BasePA> ReadSourcePAs(string basePath, Source source, string trsPath, Dictionary<string,int> paFilter)
+        private static IEnumerable<BasePA> ReadSourcePAs(string basePath, Source source, string trsPath, Dictionary<string,List<int>> paFilter)
         {
             Log.Debug($"Loading standardized PAs into memory from {Path.Combine(basePath, source.File_reference)}");
             var paDict = new DataSet<StandardPA>(Path.Combine(basePath, source.File_reference)).Read().Where(x => paFilter.Count == 0 || paFilter.ContainsKey($"{source.Source_id}-{x.Pa_id}")).ToDictionary(x => x.Pa_id);
@@ -251,6 +250,7 @@ namespace Linklives.Indexer.Lifecourses
                 yield break;
             }
             #region skip transcribed
+            
             foreach (KeyValuePair<int, StandardPA> spa in paDict)
             {
                 var pa = BasePA.Create(source, spa.Value, null);
