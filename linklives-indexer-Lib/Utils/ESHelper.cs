@@ -70,7 +70,7 @@ namespace Linklives.Indexer.Utils
                {
                    Log.Debug($"The document {item} can not be indexed. Bulk all indexing will be halted.");
                }))
-               .Wait(TimeSpan.FromHours(6),
+               .Wait(TimeSpan.FromHours(24),
                     onNext: response => { Log.Debug($"Page: {response.Page} containing: {response.Items.Count} items sucessfully indexed to {index}");}
                );              
         }
