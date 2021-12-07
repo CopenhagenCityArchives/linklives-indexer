@@ -80,18 +80,7 @@ namespace Linklives.Indexer.Lifecourses
                 lifecourses = lifecourses.GroupBy(x => x.Key).Select(x => x.First()).ToList();
                 Log.Info($"Discarded {beforecount - lifecourses.Count()} lifecourses while checking for duplicate keys. Took {datasetTimer.Elapsed}");
                 var lifecourseRepo = new EFLifeCourseRepository(dbContext);
-                int count = 1;
-                foreach (var batch in lifecourses.Batch(200))
-                {
-                    var timer = Stopwatch.StartNew();
-                      
-                    BatchInsertDBRows<LifeCourse>(optionsBuilder.Options, batch);
-                      
-                    Log.Debug($"Upserted batch #{count} containing {batch.Count()} lifecourses to db. Took {timer.Elapsed}");
-                    count++;
-                }
-            
-                var pasInLifeCourses = new Dictionary<string, List<int>>();
+            var AliasIndexMapping = SetUpNewIndexes(indexHelper);
 
                 // Build a list of pa-ids in lifecourses if max-entries is set
                 if(maxEntries > 0)
@@ -176,27 +165,6 @@ namespace Linklives.Indexer.Lifecourses
                     indexHelper.RemoveIndex(mapping.Value);
                 }
             }
-        }
-
-        //TODO Document
-        private static void BatchInsertDBRows<T>(DbContextOptions<LinklivesContext> contextOptions, IEnumerable<LifeCourse> entities) where T: class
-        {
-         /*   LinklivesContext localContext = new LinklivesContext(contextOptions);
-            localContext.ChangeTracker.AutoDetectChangesEnabled = false;
-
-            var newEntitiesIDs = entities.Select(u => u.Key).Distinct().ToArray();
-            var entitiesInDb = localContext.LifeCourses.Where(u => newEntitiesIDs.Contains(u.Key))
-                                           .Select(u => u.Key).ToArray();
-            var usersNotInDb = entities.Where(u => !entitiesInDb.Contains(u.Key));
-            foreach (LifeCourse lc in usersNotInDb)
-            {
-                localContext.Add(lc);
-                Log.Debug($"Add lc with key {lc.Key}");
-            }
-
-            localContext.SaveChanges();
-
-            localContext.Dispose();*/
         }
 
         private static void UpdateLifecourses(ElasticClient esClient, IEnumerable<BasePA> paBatch, IDictionary<string, List<int>> pasInLifeCourses, string index)
