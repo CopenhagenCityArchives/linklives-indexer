@@ -23,6 +23,7 @@ namespace Linklives.Indexer.Lifecourses
     class Program
     {
         private static ILog Log = LogManager.GetLogger(System.Reflection.MethodInfo.GetCurrentMethod().DeclaringType.Name);
+        private static string DataVersion;
         static int Main(string[] args)
         {
             Initconfig();
@@ -83,10 +84,11 @@ namespace Linklives.Indexer.Lifecourses
 
             // Data version as given in WP3 data
             //TODO Set somewhere else
-            var dataVersion = "1.0";
+            DataVersion = "1.0";
+            if (DataVersion == null) { throw new Exception("DataVersion is not set. Cannot continue"); }
             datasetTimer.Restart();
             Log.Info($"Upserting {lifecourses.Count()} lifecourses, marking old ones");
-            lifecourseRepo.InsertItemsUpdateExistingItems(lifecourses, dataVersion);
+            lifecourseRepo.InsertItemsUpdateExistingItems(lifecourses, DataVersion);
             Log.Info($"Done upserting. Took {datasetTimer.Elapsed}");
 
             var pasInLifeCourses = new Dictionary<string, List<int>>();
@@ -304,6 +306,7 @@ namespace Linklives.Indexer.Lifecourses
                 if (linkIdsInLifecourses.ContainsKey(link.Link_id))
                 {
                     link.InitKey();
+                    link.Data_version = DataVersion;
                     links.Add(link);
                 }
             }
@@ -326,6 +329,7 @@ namespace Linklives.Indexer.Lifecourses
                     lifecourse.Links.Add(uniqueLinks[id]);
                 }
                 lifecourse.InitKey();
+                lifecourse.Data_version = DataVersion;
                 yield return lifecourse;
             }
         }
