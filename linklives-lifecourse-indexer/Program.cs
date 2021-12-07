@@ -91,13 +91,11 @@ namespace Linklives.Indexer.Lifecourses
 
             var pasInLifeCourses = new Dictionary<string, List<int>>();
 
-            // Build a list of pa-ids in lifecourses if max-entries is set
-            //if(maxEntries > 0)
-            //{
+            // Build a list of pa-ids in lifecourses
             Log.Info($"Building pasInLifecourses dictionary");
             foreach (LifeCourse lc in lifecourses)
             {
-                foreach(string paKey in lc.Source_ids.Split(",").Zip(lc.Pa_ids.Split(","), (first, second) => first + "-" + second))
+                foreach(string paKey in lc.GetPAKeys())
                 {
                     if (!pasInLifeCourses.ContainsKey(paKey))
                     {
@@ -109,7 +107,6 @@ namespace Linklives.Indexer.Lifecourses
                     }
                 }
             }
-            //}
 
             lifecourses.Clear(); //free up some memory space
             Log.Info($"Finished building pasInLifecourses dictionary. Took {datasetTimer.Elapsed}");
