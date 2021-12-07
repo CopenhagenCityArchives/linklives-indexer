@@ -83,7 +83,7 @@ namespace Linklives.Indexer.Utils
                                                 .Timeout(TimeSpan.FromMinutes(1))
                                                 .IndexMany(docs)
                                             );
-            if (bulkIndexPAsResponse.Errors)
+            if (bulkIndexPAsResponse.Errors || !bulkIndexPAsResponse.ApiCall.Success)
             {
                 Log.Warn("Could not index documents in bulk indexation");
             }
