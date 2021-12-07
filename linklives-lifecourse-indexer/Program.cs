@@ -33,8 +33,8 @@ namespace Linklives.Indexer.Lifecourses
                 new Option<string>("--trs-path", "The path to the datasets top level folder"),
                 new Option<string>("--es-host", "The url of the elastic search server to use for this indexation"),
                 new Option<string>("--db-conn", "The url of the linklives api server to use for this indexation"),
-                new Option<bool>("--skip-db", getDefaultValue: ()=> false,"Indicates if the database upserts should be skipped"),
-                new Option<bool>("--skip-pas", getDefaultValue: ()=> false,"Indicates if the pas indexation should be skipped"),
+                new Option<bool>("--skip-db", getDefaultValue: ()=> false,"Skip database upserts of lifecourses and links"),
+                new Option<bool>("--skip-pas", getDefaultValue: ()=> false,"Skip indexation of person appearances"),
                 new Option<int>("--max-entries", getDefaultValue: ()=> 0, "the maximum ammount of entries to index, 0 indicates that all entries should be indexed."),
             };
 
