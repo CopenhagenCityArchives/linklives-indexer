@@ -98,9 +98,14 @@ namespace Linklives.Indexer.Lifecourses
             }
             else
             {
-                Log.Info($"Upserting {lifecourses.Count()} lifecourses, marking old ones");
+                Log.Info($"Upserting {lifecourses.Count()} lifecourses");
                 var lifecourseRepo = new EFLifeCourseRepository(dbContext);
-                lifecourseRepo.InsertItemsUpdateExistingItems(lifecourses, DataVersion);
+                Log.Info($"Adding new lifecourses");
+                lifecourseRepo.AddNewItems(lifecourses, DataVersion);
+                Log.Info($"Updating existing lifecourses");
+                lifecourseRepo.UpdateExistingItems(lifecourses, DataVersion);
+                Log.Info($"Marking old lifecourses");
+                lifecourseRepo.MarkOldItems(lifecourses);
                 Log.Info($"Done upserting. Took {datasetTimer.Elapsed}");
             }
 
@@ -123,7 +128,6 @@ namespace Linklives.Indexer.Lifecourses
                 }
             }
 
-            lifecourses.Clear(); //free up some memory space
             Log.Info($"Finished building pasInLifecourses dictionary. Took {datasetTimer.Elapsed}");
             datasetTimer.Restart();
 
