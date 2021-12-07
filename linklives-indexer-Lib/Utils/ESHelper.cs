@@ -80,7 +80,7 @@ namespace Linklives.Indexer.Utils
             Log.Debug($"Indexing documents in index {index}");
             var bulkIndexPAsResponse = _esClient.Bulk(b => b
                                                 .Index(index)
-                                                .Timeout(TimeSpan.FromMinutes(1))
+                                                .Timeout(TimeSpan.FromMinutes(5))
                                                 .IndexMany(docs)
                                             );
             if (bulkIndexPAsResponse.Errors || !bulkIndexPAsResponse.ApiCall.Success)
