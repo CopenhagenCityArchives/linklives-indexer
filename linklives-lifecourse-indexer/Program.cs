@@ -34,7 +34,7 @@ namespace Linklives.Indexer.Lifecourses
                 new Option<string>("--es-host", "The url of the elastic search server to use for this indexation"),
                 new Option<string>("--db-conn", "The url of the linklives api server to use for this indexation"),
                 new Option<bool>("--skip-db", getDefaultValue: ()=> false,"Skip database upserts of lifecourses and links"),
-                new Option<bool>("--skip-pas", getDefaultValue: ()=> false,"Skip indexation of person appearances"),
+                new Option<bool>("--skip-pas", getDefaultValue: ()=> false,"Skip Elasticsearch indexation of person appearances"),
                 new Option<int>("--max-entries", getDefaultValue: ()=> 0, "the maximum ammount of entries to index, 0 indicates that all entries should be indexed."),
             };
 
@@ -104,7 +104,7 @@ namespace Linklives.Indexer.Lifecourses
                 Log.Info($"Done upserting. Took {datasetTimer.Elapsed}");
             }
 
-            var pasInLifeCourses = new Dictionary<string, List<int>>();
+            var pasInLifeCourses = new Dictionary<string, List<string>>();
 
             // Build a list of pa-ids in lifecourses
             Log.Info($"Building pasInLifecourses dictionary");
@@ -114,11 +114,11 @@ namespace Linklives.Indexer.Lifecourses
                 {
                     if (!pasInLifeCourses.ContainsKey(paKey))
                     {
-                        pasInLifeCourses.Add(paKey, new List<int>() { lc.Life_course_id });
+                        pasInLifeCourses.Add(paKey, new List<string>() { lc.Key });
                     }
                     else
                     {
-                        pasInLifeCourses[paKey].Add(lc.Life_course_id);
+                        pasInLifeCourses[paKey].Add(lc.Key);
                     }
                 }
             }
@@ -204,16 +204,16 @@ namespace Linklives.Indexer.Lifecourses
             }
         }
 
-        private static void UpdateLifecourses(ElasticClient esClient, IEnumerable<BasePA> paBatch, IDictionary<string, List<int>> pasInLifeCourses, string index)
+        private static void UpdateLifecourses(ElasticClient esClient, IEnumerable<BasePA> paBatch, IDictionary<string, List<string>> pasInLifeCourses, string index)
         {
-            var updates = new List<Tuple<int, BasePA>>();
+            var updates = new List<Tuple<string, BasePA>>();
             try
             {
                 foreach (BasePA pa in paBatch)
                 {
-                    foreach (int lcId in pasInLifeCourses[pa.Key])
+                    foreach (string lcId in pasInLifeCourses[pa.Key])
                     {
-                        updates.Add(new Tuple<int, BasePA>(lcId, pa));
+                        updates.Add(new Tuple<string, BasePA>(lcId, pa));
                     }
                 }
             }
@@ -252,7 +252,7 @@ namespace Linklives.Indexer.Lifecourses
             result["sources"] = indexHelper.CreateNewIndex<Source>("sources");
             return result;
         }
-        private static IEnumerable<BasePA> ReadSourcePAs(string basePath, Source source, string trsPath, Dictionary<string,List<int>> paFilter)
+        private static IEnumerable<BasePA> ReadSourcePAs(string basePath, Source source, string trsPath, Dictionary<string,List<string>> paFilter)
         {
             Log.Debug($"Loading standardized PAs into memory from {Path.Combine(basePath, source.File_reference)}");
             var paDict = new DataSet<StandardPA>(Path.Combine(basePath, source.File_reference)).Read().Where(x => paFilter.Count == 0 || paFilter.ContainsKey($"{source.Source_id}-{x.Pa_id}")).ToDictionary(x => x.Pa_id);
