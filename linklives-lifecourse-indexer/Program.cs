@@ -34,7 +34,7 @@ namespace Linklives.Indexer.Lifecourses
                 new Option<string>("--es-host", "The url of the elastic search server to use for this indexation"),
                 new Option<string>("--db-conn", "The url of the linklives api server to use for this indexation"),
                 new Option<bool>("--skip-db", getDefaultValue: ()=> false,"Skip database upserts of lifecourses and links"),
-                new Option<bool>("--skip-pas", getDefaultValue: ()=> false,"Skip Elasticsearch indexation of person appearances"),
+                new Option<bool>("--skip-es", getDefaultValue: ()=> false,"Skip Elasticsearch indexation of person appearances and sources"),
                 new Option<int>("--max-entries", getDefaultValue: ()=> 0, "the maximum ammount of entries to index, 0 indicates that all entries should be indexed."),
             };
 
@@ -47,7 +47,7 @@ namespace Linklives.Indexer.Lifecourses
             var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
             XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
         }
-        static void Index(string llPath, string trsPath, string esHost, string dbConn, bool skipDb, bool skipPas, int maxEntries)
+        static void Index(string llPath, string trsPath, string esHost, string dbConn, bool skipDb, bool skipEs, int maxEntries)
         {
             #region ES Setup
             var esClient = new ElasticClient(new ConnectionSettings(new Uri(esHost))
@@ -75,9 +75,12 @@ namespace Linklives.Indexer.Lifecourses
             var datasetTimer = Stopwatch.StartNew();
             Log.Info("Reading lifecourses");
             var lifecourses = maxEntries == 0 ? ReadLifecoursesAndLinks(llPath).ToList() : ReadLifecoursesAndLinks(llPath, maxEntries).ToList();
-            Log.Info("Indexing lifecourses");
-            indexHelper.BulkIndexDocs(lifecourses, AliasIndexMapping["lifecourses"]);
-            Log.Info($"Finished indexing lifecourses. took {datasetTimer.Elapsed}");
+            if (!skipEs)
+            {
+                Log.Info("Indexing lifecourses");
+                indexHelper.BulkIndexDocs(lifecourses, AliasIndexMapping["lifecourses"]);
+                Log.Info($"Finished indexing lifecourses. took {datasetTimer.Elapsed}");
+            }
             
             datasetTimer.Restart();
             Log.Info("Discarding duplicate lifecourses");
@@ -108,40 +111,39 @@ namespace Linklives.Indexer.Lifecourses
                 lifecourseRepo.MarkOldItems(lifecourses);
                 Log.Info($"Done upserting. Took {datasetTimer.Elapsed}");
             }
-
-            var pasInLifeCourses = new Dictionary<string, List<string>>();
-
-            // Build a list of pa-ids in lifecourses
-            Log.Info($"Building pasInLifecourses dictionary");
-            foreach (LifeCourse lc in lifecourses)
-            {
-                foreach(string paKey in lc.GetPAKeys())
-                {
-                    if (!pasInLifeCourses.ContainsKey(paKey))
-                    {
-                        pasInLifeCourses.Add(paKey, new List<string>() { lc.Key });
-                    }
-                    else
-                    {
-                        pasInLifeCourses[paKey].Add(lc.Key);
-                    }
-                }
-            }
-
-            Log.Info($"Finished building pasInLifecourses dictionary. Took {datasetTimer.Elapsed}");
-            datasetTimer.Restart();
-
             
             try
             { 
                 var sources = new DataSet<Source>(Path.Combine(llPath, "auxilary_data", "sources", "sources.csv")).Read().ToList();
                 
-                if (skipPas)
+                if (skipEs)
                 {
                     Log.Info("Skipping indexation of person apperances");
                 }
                 else
                 {
+                    var pasInLifeCourses = new Dictionary<string, List<string>>();
+
+                    // Build a list of pa-ids in lifecourses
+                    Log.Info($"Building pasInLifecourses dictionary");
+                    foreach (LifeCourse lc in lifecourses)
+                    {
+                        foreach (string paKey in lc.GetPAKeys())
+                        {
+                            if (!pasInLifeCourses.ContainsKey(paKey))
+                            {
+                                pasInLifeCourses.Add(paKey, new List<string>() { lc.Key });
+                            }
+                            else
+                            {
+                                pasInLifeCourses[paKey].Add(lc.Key);
+                            }
+                        }
+                    }
+
+                    Log.Info($"Finished building pasInLifecourses dictionary. Took {datasetTimer.Elapsed}");
+                    datasetTimer.Restart();
+
                     Log.Info("Indexing person appearances");
 
                     Parallel.ForEach(sources, new ParallelOptions { MaxDegreeOfParallelism = 1 }, source =>
@@ -185,17 +187,17 @@ namespace Linklives.Indexer.Lifecourses
 
                     Log.Info($"Finished indexing person appearances. Took {datasetTimer.Elapsed}");
                     datasetTimer.Restart();
+
+                    Log.Info("Indexing sources");
+                    indexHelper.BulkIndexDocs(sources, AliasIndexMapping["sources"]);
+                    Log.Info($"Finished indexing sources. took {datasetTimer.Elapsed}");
+                    datasetTimer.Stop();
+
+                    indextimer.Stop();
+                    Log.Info($"Finished indexing all avilable files. Took: {indextimer.Elapsed}");
+                    Log.Info($"Activating new indices");
+                    indexHelper.ActivateNewIndices(AliasIndexMapping);
                 }
-
-                Log.Info("Indexing sources");
-                indexHelper.BulkIndexDocs(sources, AliasIndexMapping["sources"]);
-                Log.Info($"Finished indexing sources. took {datasetTimer.Elapsed}");
-                datasetTimer.Stop();
-
-                indextimer.Stop();
-                Log.Info($"Finished indexing all avilable files. Took: {indextimer.Elapsed}");
-                Log.Info($"Activating new indices");
-                indexHelper.ActivateNewIndices(AliasIndexMapping);
             }
             catch(Exception e)
             {
