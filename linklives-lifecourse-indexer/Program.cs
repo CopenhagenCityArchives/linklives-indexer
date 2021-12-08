@@ -102,7 +102,7 @@ namespace Linklives.Indexer.Lifecourses
             else
             {
                 Log.Info($"Upserting {lifecourses.Count()} lifecourses");
-                var lifecourseRepo = new EFLifeCourseRepository(dbContext);
+                var lifecourseRepo = new EFLifeCourseRepository(dbContext, optionsBuilder.Options);
                 Log.Info($"Adding new lifecourses");
                 lifecourseRepo.AddNewItems(lifecourses, DataVersion);
                 Log.Info($"Updating existing lifecourses");
