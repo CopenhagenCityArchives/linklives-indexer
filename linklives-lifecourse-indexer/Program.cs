@@ -101,12 +101,9 @@ namespace Linklives.Indexer.Lifecourses
             }
             else
             {
-                Log.Info($"Upserting {lifecourses.Count()} lifecourses");
                 var lifecourseRepo = new EFLifeCourseRepository(dbContext, optionsBuilder.Options);
-                Log.Info($"Adding new lifecourses");
-                lifecourseRepo.AddNewItems(lifecourses, DataVersion);
-                Log.Info($"Updating existing lifecourses");
-                lifecourseRepo.UpdateExistingItems(lifecourses, DataVersion);
+                Log.Info($"Upserting {lifecourses.Count()} lifecourses");
+                lifecourseRepo.Upsert(lifecourses, DataVersion);
                 Log.Info($"Marking old lifecourses");
                 lifecourseRepo.MarkOldItems(lifecourses);
                 Log.Info($"Done upserting. Took {datasetTimer.Elapsed}");
