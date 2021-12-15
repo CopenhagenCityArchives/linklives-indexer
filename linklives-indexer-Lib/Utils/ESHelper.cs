@@ -19,10 +19,13 @@ namespace Linklives.Indexer.Utils
         {
             var date = DateTime.Now.ToString("dd-MM-yyyy_hh-mm-ss");
             var indexname = $"{index}_{date}";
-            _esClient.Indices.Create(indexname, c => c.
-            Map<T>(m => m
-                .DateDetection(dateDetection)
-                .AutoMap()));
+            _esClient.Indices.Create(indexname, c => c
+                .Map<T>(m => m
+                    .DateDetection(dateDetection)
+                    .AutoMap())
+                .Settings(s => s
+                    .Setting(UpdatableIndexSettings.MaxResultWindow, 100))
+            );
 
             return indexname;
         }
