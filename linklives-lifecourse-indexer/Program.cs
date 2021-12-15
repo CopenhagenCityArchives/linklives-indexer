@@ -207,6 +207,13 @@ namespace Linklives.Indexer.Lifecourses
             }
         }
 
+        /// <summary>
+        /// Updates lifecourses with PAs and sets sortable parameters for the lifecourse
+        /// </summary>
+        /// <param name="esClient"></param>
+        /// <param name="paBatch"></param>
+        /// <param name="pasInLifeCourses"></param>
+        /// <param name="index"></param>
         private static void UpdateLifecourses(ElasticClient esClient, IEnumerable<BasePA> paBatch, IDictionary<string, List<string>> pasInLifeCourses, string index)
         {
             var updates = new List<Tuple<string, BasePA>>();
@@ -226,12 +233,24 @@ namespace Linklives.Indexer.Lifecourses
             }
             
             Log.Debug($"Updating {updates.Count} lifecourses with pas");
+
+            var updateScript = "if(ctx._source.event_year_sortable < params.pa.event_year_sortable)" +
+                "               { " +
+                                    "ctx._source.sourceyear_sortable = params.pa.sourceyear_sortable;" +
+                                    "ctx._source.first_names_sortable = params.pa.first_names_sortable;" +
+                                    "ctx._source.family_names_sortable = params.pa.family_names_sortable;" +
+                                    "ctx._source.birthyear_sortable = params.pa.birthyear_sortable;" +
+                                    "ctx._source.event_year_sortable = params.pa.event_year_sortable;" +
+                                    "ctx._source.deathyear_sortable = params.pa.deathyear_sortable;" +
+                                "}" +
+                                "ctx._source.person_appearance.add(params.pa);";
+
             var bulkUpdateLifecoursesResponse = esClient.Bulk(b => b
                                 .Index(index)
                                 .UpdateMany(updates, (descriptor, update) => descriptor
                                     .Id(update.Item1)
                                     .Script(s => s
-                                        .Source("ctx._source.person_appearance.add(params.pa)")
+                                        .Source(updateScript)
                                         .Params(p => p
                                             .Add("pa", update.Item2)
                                         )
