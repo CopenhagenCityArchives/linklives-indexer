@@ -24,7 +24,7 @@ namespace Linklives.Indexer.Utils
                     .DateDetection(dateDetection)
                     .AutoMap())
                 .Settings(s => s
-                    .Setting(UpdatableIndexSettings.MaxResultWindow, 100))
+                    .Setting(UpdatableIndexSettings.MaxResultWindow, 1000))
             );
 
             return indexname;
