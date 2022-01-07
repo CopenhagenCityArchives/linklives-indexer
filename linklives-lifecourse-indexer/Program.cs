@@ -147,7 +147,7 @@ namespace Linklives.Indexer.Lifecourses
                     {
                         Log.Debug($"Reading PAs from source {source.Source_name}");
                         var timer = Stopwatch.StartNew();
-                        var sourcePAs = ReadSourcePAs(llPath, source, trsPath, pasInLifeCourses);
+                        var sourcePAs = ReadSourcePAs(llPath, source, trsPath, pasInLifeCourses, maxEntries != 0);
                         Log.Debug($"Indexing PAs from source {source.Source_name}");
                         //indexHelper.BulkIndexDocs(sourcePAs, AliasIndexMapping["pas"]);
                         var paBatch = new List<BasePA>();
@@ -274,10 +274,12 @@ namespace Linklives.Indexer.Lifecourses
             result["sources"] = indexHelper.CreateNewIndex<Source>("sources");
             return result;
         }
-        private static IEnumerable<BasePA> ReadSourcePAs(string basePath, Source source, string trsPath, Dictionary<string,List<string>> paFilter)
+        private static IEnumerable<BasePA> ReadSourcePAs(string basePath, Source source, string trsPath, Dictionary<string,List<string>> paFilter, bool usePaFilter)
         {
             Log.Debug($"Loading standardized PAs into memory from {Path.Combine(basePath, source.File_reference)}");
-            var paDict = new DataSet<StandardPA>(Path.Combine(basePath, source.File_reference)).Read().Where(x => paFilter.Count == 0 || paFilter.ContainsKey($"{source.Source_id}-{x.Pa_id}")).ToDictionary(x => x.Pa_id);
+            
+            var paDict = usePaFilter ? new DataSet<StandardPA>(Path.Combine(basePath, source.File_reference)).Read().Where(x => paFilter.ContainsKey($"{source.Source_id}-{x.Pa_id}")).ToDictionary(x => x.Pa_id) : new DataSet<StandardPA>(Path.Combine(basePath, source.File_reference)).Read().ToDictionary(x => x.Pa_id);
+            
             if (paDict.Count == 0)
             {
                 Log.Debug($"No standardized PAs matched the paFilter, skipping this source");
