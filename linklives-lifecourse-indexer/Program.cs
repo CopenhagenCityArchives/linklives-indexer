@@ -278,7 +278,9 @@ namespace Linklives.Indexer.Lifecourses
         {
             Log.Debug($"Loading standardized PAs into memory from {Path.Combine(basePath, source.File_reference)}");
             
-            var paDict = usePaFilter ? new DataSet<StandardPA>(Path.Combine(basePath, source.File_reference)).Read().Where(x => paFilter.ContainsKey($"{source.Source_id}-{x.Pa_id}")).ToDictionary(x => x.Pa_id) : new DataSet<StandardPA>(Path.Combine(basePath, source.File_reference)).Read().ToDictionary(x => x.Pa_id);
+            var paDict = usePaFilter ? 
+                new DataSet<StandardPA>(Path.Combine(basePath, source.File_reference)).Read().Where(x => paFilter.ContainsKey($"{source.Source_id}-{x.Pa_id}")).ToDictionary(x => x.Pa_id) : 
+                new DataSet<StandardPA>(Path.Combine(basePath, source.File_reference)).Read().ToDictionary(x => x.Pa_id);
             
             if (paDict.Count == 0)
             {
