@@ -88,7 +88,7 @@ namespace Linklives.Indexer.Utils
                                             );
             if (bulkIndexPAsResponse.Errors || !bulkIndexPAsResponse.ApiCall.Success)
             {
-                Log.Warn("Could not index documents in bulk indexation");
+                Log.Warn("Could not index documents in bulk indexation:" + bulkIndexPAsResponse.ApiCall.OriginalException);
             }
         }
     }
