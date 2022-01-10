@@ -154,7 +154,7 @@ namespace Linklives.Indexer.Lifecourses
                         foreach (var curPa in sourcePAs)
                         {
                             paBatch.Add(curPa);
-                            if (paBatch.Count == 3000)
+                            if (paBatch.Count == 1000)
                             {
                                 try
                                 {
