@@ -221,6 +221,9 @@ namespace Linklives.Indexer.Lifecourses
             {
                 foreach (BasePA pa in paBatch)
                 {
+                    // If the PA is not in pasInLifecourses, the given PA should not trigger an update in lifecourses index
+                    if (!pasInLifeCourses.ContainsKey(pa.Key)) continue;
+
                     foreach (string lcId in pasInLifeCourses[pa.Key])
                     {
                         updates.Add(new Tuple<string, BasePA>(lcId, pa));
