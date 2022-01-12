@@ -66,7 +66,7 @@ namespace Linklives.Indexer.Utils
                .BackOffTime("30s")
                .BackOffRetries(3)
                .RefreshOnCompleted()
-               .MaxDegreeOfParallelism(1)
+               .MaxDegreeOfParallelism(2)
                .Size(3000)
                .Timeout(TimeSpan.FromMinutes(1))
                .DroppedDocumentCallback((item, Document) =>
