@@ -311,7 +311,7 @@ namespace Linklives.Indexer.Lifecourses
                 try
                 {
                     var trsPa = new TranscribedPA(transcribtion, source.Source_id);
-                    if(!paDict.ContainsKey(trsPa.Pa_id)) { continue; }
+                    if(usePaFilter && !paDict.ContainsKey(trsPa.Pa_id)) { continue; }
                     pa = BasePA.Create(source, paDict[trsPa.Pa_id], trsPa);
                     pa.InitKey();          
                 }
@@ -323,7 +323,7 @@ namespace Linklives.Indexer.Lifecourses
                 }
 
                 //If paFilter has entries and the pa is not in it, dont return it
-                if (paFilter.Count > 0 && !paFilter.ContainsKey(pa.Key)) { continue; }
+                if (usePaFilter && !paFilter.ContainsKey(pa.Key)) { continue; }
 
                 yield return pa;
             }
