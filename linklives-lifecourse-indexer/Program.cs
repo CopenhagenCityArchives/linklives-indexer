@@ -174,7 +174,7 @@ namespace Linklives.Indexer.Lifecourses
                                 paBatch.Clear();
                             }
 
-                            lifecourseUpdates.AddRange(GetLifeCourseUpdates(curPa, pasInLifeCourses));
+                            AddLifeCourseUpdates(curPa, lifecourseUpdates, pasInLifeCourses);
                             if (lifecourseUpdates.Count > 3000)
                             {
                                 indexHelper.UpdateMany(lifecourseUpdateScript, lifecourseUpdates, AliasIndexMapping["lifecourses"]);
@@ -223,19 +223,15 @@ namespace Linklives.Indexer.Lifecourses
             }
         }
 
-        private static List<Tuple<string, BasePA>> GetLifeCourseUpdates(BasePA pa, Dictionary<string,List<string>> pasInLifeCourses)
+        private static void AddLifeCourseUpdates(BasePA pa, List<Tuple<string, BasePA>> updates, Dictionary<string,List<string>> pasInLifeCourses)
         {
-            var updates = new List<Tuple<string, BasePA>>();
-
             // If the PA is not in pasInLifecourses, the given PA should not trigger an update in lifecourses index
-            if (!pasInLifeCourses.ContainsKey(pa.Key)) return null;
+            if (!pasInLifeCourses.ContainsKey(pa.Key)) return;
 
             foreach (string lcId in pasInLifeCourses[pa.Key])
             {
                 updates.Add(new Tuple<string, BasePA>(lcId, pa));
             }
-
-            return updates;
         }
 
         private static IDictionary<string, string> SetUpNewIndexes(ESHelper indexHelper)
