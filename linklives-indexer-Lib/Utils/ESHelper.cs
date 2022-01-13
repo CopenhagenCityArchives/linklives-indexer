@@ -1,4 +1,5 @@
-﻿using log4net;
+﻿using Linklives.Domain;
+using log4net;
 using Nest;
 using System;
 using System.Collections.Generic;
@@ -66,7 +67,7 @@ namespace Linklives.Indexer.Utils
                .BackOffTime("30s")
                .BackOffRetries(3)
                .RefreshOnCompleted()
-               .MaxDegreeOfParallelism(2)
+               .MaxDegreeOfParallelism(3)
                .Size(3000)
                .Timeout(TimeSpan.FromMinutes(1))
                .DroppedDocumentCallback((item, Document) =>
@@ -81,14 +82,57 @@ namespace Linklives.Indexer.Utils
         public void IndexManyDocs<T>(IEnumerable<T> docs, string index) where T : class
         {
             Log.Debug($"Indexing documents in index {index}");
-            var bulkIndexPAsResponse = _esClient.Bulk(b => b
-                                                .Index(index)
-                                                .Timeout(TimeSpan.FromMinutes(5))
-                                                .IndexMany(docs)
-                                            );
-            if (bulkIndexPAsResponse.Errors || !bulkIndexPAsResponse.ApiCall.Success)
+            try
             {
-                Log.Warn("Could not index documents in bulk indexation:" + bulkIndexPAsResponse.ApiCall.OriginalException);
+                var bulkIndexPAsResponse = _esClient.Bulk(b => b
+                                                                .Index(index)
+                                                                .Timeout(TimeSpan.FromMinutes(5))
+                                                                .IndexMany(docs)
+                                                            );
+                if (bulkIndexPAsResponse.Errors || !bulkIndexPAsResponse.ApiCall.Success)
+                {
+                    Log.Warn("Could not index documents in bulk indexation:" + bulkIndexPAsResponse.ApiCall.OriginalException);
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Warn("Could not index documents in bulk indexation: " + e.Message);
+            }   
+        }
+
+        /// <summary>
+        /// Updates lifecourses with PAs and sets sortable parameters for the lifecourse
+        /// </summary>
+        /// <param name="updates">A list of Tuple<string,BasePA> that holdes lifecourse and the item to update it with</param>
+        /// <param name="index"></param>
+        public void UpdateMany<T>(string updateScript, List<Tuple<string, T>> updates, string index)
+        {
+            Log.Debug($"Updating {updates.Count} documents in index {index}");
+
+            try
+            {
+                var bulkUpdateLifecoursesResponse = _esClient.Bulk(b => b
+                                .Index(index)
+                                .Timeout(TimeSpan.FromMinutes(5))
+                                .UpdateMany(updates, (descriptor, update) => descriptor
+                                    .Id(update.Item1)
+                                    .Script(s => s
+                                        .Source(updateScript)
+                                        .Params(p => p
+                                            .Add("pa", update.Item2)
+                                        )
+                                    )
+                                )
+                            );
+
+                if (bulkUpdateLifecoursesResponse.Errors || !bulkUpdateLifecoursesResponse.ApiCall.Success)
+                {
+                    Log.Warn($"Could not index lifecourses for a batch {bulkUpdateLifecoursesResponse.DebugInformation}");
+                }
+            }
+            catch(Exception e)
+            {
+                Log.Warn($"Could not update lifecourses for a batch {e.Message}");
             }
         }
     }

@@ -141,9 +141,21 @@ namespace Linklives.Indexer.Lifecourses
                     Log.Info($"Finished building pasInLifecourses dictionary. Took {datasetTimer.Elapsed}");
                     datasetTimer.Restart();
 
+                    string lifecourseUpdateScript = 
+                            "if(ctx._source.event_year_sortable < params.pa.event_year_sortable)" +
+                                "{ " +
+                                    "ctx._source.sourceyear_sortable = params.pa.sourceyear_sortable;" +
+                                    "ctx._source.first_names_sortable = params.pa.first_names_sortable;" +
+                                    "ctx._source.family_names_sortable = params.pa.family_names_sortable;" +
+                                    "ctx._source.birthyear_sortable = params.pa.birthyear_sortable;" +
+                                    "ctx._source.event_year_sortable = params.pa.event_year_sortable;" +
+                                    "ctx._source.deathyear_sortable = params.pa.deathyear_sortable;" +
+                                "}" +
+                                "ctx._source.person_appearance.add(params.pa);";
+
                     Log.Info("Indexing person appearances");
 
-                    Parallel.ForEach(sources, new ParallelOptions { MaxDegreeOfParallelism = 1 }, source =>
+                    Parallel.ForEach(sources, new ParallelOptions { MaxDegreeOfParallelism = 2 }, source =>
                     {
                         Log.Debug($"Reading PAs from source {source.Source_name}");
                         var timer = Stopwatch.StartNew();
@@ -151,22 +163,22 @@ namespace Linklives.Indexer.Lifecourses
                         Log.Debug($"Indexing PAs from source {source.Source_name}");
                         //indexHelper.BulkIndexDocs(sourcePAs, AliasIndexMapping["pas"]);
                         var paBatch = new List<BasePA>();
+                        var lifecourseUpdates = new List<Tuple<string, BasePA>>();
+
                         foreach (var curPa in sourcePAs)
                         {
                             paBatch.Add(curPa);
-                            if (paBatch.Count == 1000)
+                            if (paBatch.Count == 3000)
                             {
-                                try
-                                {
-                                    indexHelper.IndexManyDocs(paBatch, AliasIndexMapping["pas"]);
-                                }
-                                catch (Exception e)
-                                {
-                                    Console.WriteLine(e.Message);
-                                }
-                                UpdateLifecourses(esClient, paBatch, pasInLifeCourses, AliasIndexMapping["lifecourses"]);
-
+                                indexHelper.IndexManyDocs(paBatch, AliasIndexMapping["pas"]);
                                 paBatch.Clear();
+                            }
+
+                            lifecourseUpdates.AddRange(GetLifeCourseUpdates(curPa, pasInLifeCourses));
+                            if (lifecourseUpdates.Count > 3000)
+                            {
+                                indexHelper.UpdateMany(lifecourseUpdateScript, lifecourseUpdates, AliasIndexMapping["lifecourses"]);
+                                lifecourseUpdates.Clear();
                             }
                         }
 
@@ -174,9 +186,13 @@ namespace Linklives.Indexer.Lifecourses
                         if (paBatch.Count > 0)
                         {
                             indexHelper.IndexManyDocs(paBatch, AliasIndexMapping["pas"]);
-                            UpdateLifecourses(esClient, paBatch, pasInLifeCourses, AliasIndexMapping["lifecourses"]);
-
                             paBatch.Clear();
+                        }
+
+                        if(lifecourseUpdates.Count > 0)
+                        {
+                            indexHelper.UpdateMany(lifecourseUpdateScript, lifecourseUpdates, AliasIndexMapping["lifecourses"]);
+                            lifecourseUpdates.Clear();
                         }
 
                         Log.Debug($"Finished indexing PAs from source {source.Source_name}. Took: {timer.Elapsed}");
@@ -207,71 +223,20 @@ namespace Linklives.Indexer.Lifecourses
             }
         }
 
-        /// <summary>
-        /// Updates lifecourses with PAs and sets sortable parameters for the lifecourse
-        /// </summary>
-        /// <param name="esClient"></param>
-        /// <param name="paBatch"></param>
-        /// <param name="pasInLifeCourses"></param>
-        /// <param name="index"></param>
-        private static void UpdateLifecourses(ElasticClient esClient, IEnumerable<BasePA> paBatch, IDictionary<string, List<string>> pasInLifeCourses, string index)
+        private static List<Tuple<string, BasePA>> GetLifeCourseUpdates(BasePA pa, Dictionary<string,List<string>> pasInLifeCourses)
         {
             var updates = new List<Tuple<string, BasePA>>();
-            try
-            {
-                foreach (BasePA pa in paBatch)
-                {
-                    // If the PA is not in pasInLifecourses, the given PA should not trigger an update in lifecourses index
-                    if (!pasInLifeCourses.ContainsKey(pa.Key)) continue;
 
-                    foreach (string lcId in pasInLifeCourses[pa.Key])
-                    {
-                        updates.Add(new Tuple<string, BasePA>(lcId, pa));
-                    }
-                }
-            }
-            catch (Exception e)
+            // If the PA is not in pasInLifecourses, the given PA should not trigger an update in lifecourses index
+            if (!pasInLifeCourses.ContainsKey(pa.Key)) return null;
+
+            foreach (string lcId in pasInLifeCourses[pa.Key])
             {
-                Log.Error("Could not add lifecourse to update statements (this shouldnt be possible!): " + e.Message);
+                updates.Add(new Tuple<string, BasePA>(lcId, pa));
             }
 
-            if (updates.Count == 0)
-            {
-                Log.Debug("Skipping update of lifecourses, no matching lifecourses in this PA batch");
-            }
-
-            Log.Debug($"Updating {updates.Count} lifecourses with pas");
-
-            var updateScript = "if(ctx._source.event_year_sortable < params.pa.event_year_sortable)" +
-                "               { " +
-                                    "ctx._source.sourceyear_sortable = params.pa.sourceyear_sortable;" +
-                                    "ctx._source.first_names_sortable = params.pa.first_names_sortable;" +
-                                    "ctx._source.family_names_sortable = params.pa.family_names_sortable;" +
-                                    "ctx._source.birthyear_sortable = params.pa.birthyear_sortable;" +
-                                    "ctx._source.event_year_sortable = params.pa.event_year_sortable;" +
-                                    "ctx._source.deathyear_sortable = params.pa.deathyear_sortable;" +
-                                "}" +
-                                "ctx._source.person_appearance.add(params.pa);";
-
-            var bulkUpdateLifecoursesResponse = esClient.Bulk(b => b
-                                .Index(index)
-                                .UpdateMany(updates, (descriptor, update) => descriptor
-                                    .Id(update.Item1)
-                                    .Script(s => s
-                                        .Source(updateScript)
-                                        .Params(p => p
-                                            .Add("pa", update.Item2)
-                                        )
-                                    )
-                                )
-                            );
-
-            if (bulkUpdateLifecoursesResponse.Errors)
-            {
-                Log.Warn($"Could not index lifecourses for a batch {bulkUpdateLifecoursesResponse.DebugInformation}");
-            }
+            return updates;
         }
-        
 
         private static IDictionary<string, string> SetUpNewIndexes(ESHelper indexHelper)
         {
