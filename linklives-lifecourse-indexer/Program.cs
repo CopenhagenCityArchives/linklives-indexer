@@ -234,7 +234,12 @@ namespace Linklives.Indexer.Lifecourses
             {
                 Log.Error("Could not add lifecourse to update statements (this shouldnt be possible!): " + e.Message);
             }
-            
+
+            if (updates.Count == 0)
+            {
+                Log.Debug("Skipping update of lifecourses, no matching lifecourses in this PA batch");
+            }
+
             Log.Debug($"Updating {updates.Count} lifecourses with pas");
 
             var updateScript = "if(ctx._source.event_year_sortable < params.pa.event_year_sortable)" +
