@@ -157,16 +157,20 @@ namespace Linklives.Indexer.Lifecourses
 
                     Parallel.ForEach(sources, new ParallelOptions { MaxDegreeOfParallelism = 2 }, source =>
                     {
-                        Log.Debug($"Reading PAs from source {source.Source_name}");
+                        Log.Info($"Reading PAs from source {source.Source_name}");
                         var timer = Stopwatch.StartNew();
                         var sourcePAs = ReadSourcePAs(llPath, source, trsPath, pasInLifeCourses, maxEntries != 0);
-                        Log.Debug($"Indexing PAs from source {source.Source_name}");
+                        Log.Info($"Indexing PAs from source {source.Source_name}");
                         //indexHelper.BulkIndexDocs(sourcePAs, AliasIndexMapping["pas"]);
                         var paBatch = new List<BasePA>();
                         var lifecourseUpdates = new List<Tuple<string, BasePA>>();
+                        int pasIndexed = 0;
+                        int lifecoursesUpdated = 0;
 
                         foreach (var curPa in sourcePAs)
                         {
+                            pasIndexed++;
+
                             paBatch.Add(curPa);
                             if (paBatch.Count == 3000)
                             {
@@ -178,7 +182,13 @@ namespace Linklives.Indexer.Lifecourses
                             if (lifecourseUpdates.Count > 3000)
                             {
                                 indexHelper.UpdateMany(lifecourseUpdateScript, lifecourseUpdates, AliasIndexMapping["lifecourses"]);
+                                lifecoursesUpdated += lifecourseUpdates.Count;
                                 lifecourseUpdates.Clear();
+                            }
+
+                            if (pasIndexed % 100000 == 0)
+                            {
+                                Log.Info($"Indexed {pasIndexed} from {source.Source_name}");
                             }
                         }
 
@@ -192,13 +202,14 @@ namespace Linklives.Indexer.Lifecourses
                         if(lifecourseUpdates.Count > 0)
                         {
                             indexHelper.UpdateMany(lifecourseUpdateScript, lifecourseUpdates, AliasIndexMapping["lifecourses"]);
+                            lifecoursesUpdated += lifecourseUpdates.Count;
                             lifecourseUpdates.Clear();
                         }
 
-                        Log.Debug($"Finished indexing PAs from source {source.Source_name}. Took: {timer.Elapsed}");
+                        Log.Info($"Finished indexing {pasIndexed} PAs and updating {lifecoursesUpdated} lifecourses from source {source.Source_name}. Took: {timer.Elapsed}");
                     });
 
-                    Log.Info($"Finished indexing person appearances. Took {datasetTimer.Elapsed}");
+                    Log.Info($"Finished indexing PAs. Took {datasetTimer.Elapsed}");
                     datasetTimer.Restart();
 
                     Log.Info("Indexing sources");
@@ -210,6 +221,8 @@ namespace Linklives.Indexer.Lifecourses
                     Log.Info($"Finished indexing all avilable files. Took: {indextimer.Elapsed}");
                     Log.Info($"Activating new indices");
                     indexHelper.ActivateNewIndices(AliasIndexMapping);
+
+                    Log.Info($"All done");
                 }
             }
             catch(Exception e)
@@ -301,7 +314,7 @@ namespace Linklives.Indexer.Lifecourses
         }
         private static IEnumerable<LifeCourse> ReadLifecoursesAndLinks(string basepath, int lifecourseCount = 0)
         { 
-            Log.Debug($"Reading lifecourses into memory from {Path.Combine(basepath, "life - courses", "life_courses.csv")}");
+            Log.Info($"Reading lifecourses into memory from {Path.Combine(basepath, "life-courses", "life_courses.csv")}");
             var lifecoursesDataset = new DataSet<LifeCourse>(Path.Combine(basepath, "life-courses", "life_courses.csv"));
             int rowsRead = 0;
             var linkIdsInLifecourses = new Dictionary<string,bool>();
@@ -317,7 +330,7 @@ namespace Linklives.Indexer.Lifecourses
                 lifecourses.Add(lifecourse);
             }
 
-            Log.Debug("Reading links");
+            Log.Info($"Reading links from {Path.Combine(basepath, "links", "links.csv")}");
             var linksDataset = new DataSet<Link>(Path.Combine(basepath, "links", "links.csv"));
             var links = new List<Link>();
             foreach (var link in linksDataset.Read())
@@ -330,15 +343,15 @@ namespace Linklives.Indexer.Lifecourses
                 }
             }
             
-            Log.Debug($"Uniquefying links");
+            Log.Info($"Uniquefying links");
             var timer = Stopwatch.StartNew();
             var uniqueLinks = MakeLinksUnique(links);
             links.Clear();
             linkIdsInLifecourses.Clear();
-            Log.Debug($"Finished uniquefying links. Took: {timer.Elapsed}");
+            Log.Info($"Finished uniquefying links. Took: {timer.Elapsed}");
             timer.Stop();
 
-            Log.Debug($"Combining lifecourses and links");
+            Log.Info($"Combining lifecourses and links");
             foreach (var lifecourse in lifecourses)
             {
                 lifecourse.Links = new List<Link>();
