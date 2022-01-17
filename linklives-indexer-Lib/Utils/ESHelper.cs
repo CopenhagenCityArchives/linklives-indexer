@@ -86,7 +86,7 @@ namespace Linklives.Indexer.Utils
             {
                 var bulkIndexPAsResponse = _esClient.Bulk(b => b
                                                                 .Index(index)
-                                                                .Timeout(TimeSpan.FromMinutes(5))
+                                                                .Timeout(TimeSpan.FromMinutes(7))
                                                                 .IndexMany(docs)
                                                             );
                 if (bulkIndexPAsResponse.Errors || !bulkIndexPAsResponse.ApiCall.Success)
@@ -113,7 +113,7 @@ namespace Linklives.Indexer.Utils
             {
                 var bulkUpdateLifecoursesResponse = _esClient.Bulk(b => b
                                 .Index(index)
-                                .Timeout(TimeSpan.FromMinutes(5))
+                                .Timeout(TimeSpan.FromMinutes(7))
                                 .UpdateMany(updates, (descriptor, update) => descriptor
                                     .Id(update.Item1)
                                     .Script(s => s
