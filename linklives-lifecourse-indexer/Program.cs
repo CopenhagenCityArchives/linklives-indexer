@@ -70,7 +70,12 @@ namespace Linklives.Indexer.Lifecourses
             #endregion
             
             var AliasIndexMapping = SetUpNewIndexes(indexHelper);
-            
+
+            // Data version as given in WP3 data
+            //TODO Set somewhere else
+            DataVersion = "1.0";
+            if (DataVersion == null) { throw new Exception("DataVersion is not set. Cannot continue"); }
+
             var indextimer = Stopwatch.StartNew();
             var datasetTimer = Stopwatch.StartNew();
             Log.Info("Reading lifecourses");
@@ -88,11 +93,6 @@ namespace Linklives.Indexer.Lifecourses
             lifecourses = lifecourses.GroupBy(x => x.Key).Select(x => x.First()).ToList();
             Log.Info($"Discarded {beforecount - lifecourses.Count()} lifecourses while checking for duplicate keys. Took {datasetTimer.Elapsed}");
 
-            // Data version as given in WP3 data
-            //TODO Set somewhere else
-            DataVersion = "1.0";
-            if (DataVersion == null) { throw new Exception("DataVersion is not set. Cannot continue"); }
-            
             datasetTimer.Restart();
 
             if (skipDb)
@@ -316,6 +316,12 @@ namespace Linklives.Indexer.Lifecourses
         { 
             Log.Info($"Reading lifecourses into memory from {Path.Combine(basepath, "life-courses", "life_courses.csv")}");
             var lifecoursesDataset = new DataSet<LifeCourse>(Path.Combine(basepath, "life-courses", "life_courses.csv"));
+            
+            if(DataVersion == null)
+            {
+                throw new Exception("DataVersion is not set, cannot continue.");
+            }
+            
             int rowsRead = 0;
             var linkIdsInLifecourses = new Dictionary<string,bool>();
             var lifecourses = new List<LifeCourse>();
