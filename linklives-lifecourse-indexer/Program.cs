@@ -33,12 +33,13 @@ namespace Linklives.Indexer.Lifecourses
                 new Option<string>("--trs-path", "The path to the datasets top level folder"),
                 new Option<string>("--es-host", "The url of the elastic search server to use for this indexation"),
                 new Option<string>("--db-conn", "The url of the linklives api server to use for this indexation"),
+                new Option<string>("--data-version", "the version of data from WP3"),
                 new Option<bool>("--skip-db", getDefaultValue: ()=> false,"Skip database upserts of lifecourses and links"),
                 new Option<bool>("--skip-es", getDefaultValue: ()=> false,"Skip Elasticsearch indexation of person appearances and sources"),
                 new Option<int>("--max-entries", getDefaultValue: ()=> 0, "the maximum ammount of entries to index, 0 indicates that all entries should be indexed."),
             };
 
-            cmd.Handler = CommandHandler.Create<string, string, string, string, bool, bool, int>(Index);
+            cmd.Handler = CommandHandler.Create<string, string, string, string, string, bool, bool, int>(Index);
 
             return cmd.Invoke(args);
         }
@@ -47,7 +48,7 @@ namespace Linklives.Indexer.Lifecourses
             var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
             XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
         }
-        static void Index(string llPath, string trsPath, string esHost, string dbConn, bool skipDb, bool skipEs, int maxEntries)
+        static void Index(string llPath, string trsPath, string esHost, string dbConn, string dataVersion, bool skipDb, bool skipEs, int maxEntries)
         {
             #region ES Setup
             var esClient = new ElasticClient(new ConnectionSettings(new Uri(esHost))
@@ -73,7 +74,7 @@ namespace Linklives.Indexer.Lifecourses
 
             // Data version as given in WP3 data
             //TODO Set somewhere else
-            DataVersion = "1.0";
+            DataVersion = dataVersion;
             if (DataVersion == null) { throw new Exception("DataVersion is not set. Cannot continue"); }
 
             var indextimer = Stopwatch.StartNew();
