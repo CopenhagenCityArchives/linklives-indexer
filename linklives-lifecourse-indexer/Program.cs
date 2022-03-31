@@ -113,7 +113,21 @@ namespace Linklives.Indexer.Lifecourses
             try
             { 
                 var sources = new DataSet<Source>(Path.Combine(llPath, "auxilary_data", "sources", "sources.csv")).Read().ToList();
-                
+                var missingSourceFiles = new List<string>();
+                foreach(var source in sources)
+                {
+                    var path = Path.Combine(llPath, source.File_reference);
+                    if (!File.Exists(path))
+                    {
+                        missingSourceFiles.Add(path);
+                    }
+                }
+
+                if(missingSourceFiles.Count > 0)
+                {
+                    throw new Exception("Error checking sources files. The following files does not exist:" + string.Join(",", missingSourceFiles));
+                }
+
                 if (skipEs)
                 {
                     Log.Info("Skipping indexation of person apperances");
