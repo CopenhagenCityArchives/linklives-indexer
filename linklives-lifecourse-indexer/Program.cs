@@ -387,7 +387,7 @@ namespace Linklives.Indexer.Lifecourses
                     catch(KeyNotFoundException e)
                     {
                         // TODO: Temporary logic to prevent errors when lifecourses does not have any link ids. This is an exception
-                        Log.Error($"A lifecourse points to a link id that does not exist in the unique links list. The lifecourse is skipped in indexation. Lifecourse id {lifecourse.Id}, link id {id}");
+                        Log.Error($"A lifecourse points to a link id that does not exist in the unique links list. The lifecourse is skipped in indexation. Lifecourse id {lifecourse.Life_course_id}, link id {id}");
                         skipLifecourse = true;
                     }
                 }
