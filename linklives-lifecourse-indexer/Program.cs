@@ -138,6 +138,7 @@ namespace Linklives.Indexer.Lifecourses
 
                     // Build a list of pa-ids in lifecourses
                     Log.Info($"Building pasInLifecourses dictionary");
+                    datasetTimer.Restart();
                     foreach (LifeCourse lc in lifecourses)
                     {
                         foreach (string paKey in lc.GetPAKeys())
