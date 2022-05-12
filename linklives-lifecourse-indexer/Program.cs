@@ -363,13 +363,13 @@ namespace Linklives.Indexer.Lifecourses
                     links.Add(link);
                 }
             }
-            
+            Log.Info($"Loaded {links.Count} links");
             Log.Info($"Uniquefying links");
             var timer = Stopwatch.StartNew();
             var uniqueLinks = MakeLinksUnique(links);
             links.Clear();
             linkIdsInLifecourses.Clear();
-            Log.Info($"Finished uniquefying links. Took: {timer.Elapsed}");
+            Log.Info($"Finished uniquefying links. Number of unique links: {uniqueLinks.Count}. Took: {timer.Elapsed}");
             timer.Stop();
 
             Log.Info($"Combining lifecourses and links");
@@ -377,10 +377,21 @@ namespace Linklives.Indexer.Lifecourses
             {
                 lifecourse.Links = new List<Link>();
                 var linkIds = lifecourse.Link_ids.Split(',');
+                var skipLifecourse = false;
                 foreach (var id in linkIds)
                 {
-                    lifecourse.Links.Add(uniqueLinks[id]);
+                    try
+                    {
+                        lifecourse.Links.Add(uniqueLinks[id]);
+                    }
+                    catch(KeyNotFoundException e)
+                    {
+                        // TODO: Temporary logic to prevent errors when lifecourses does not have any link ids. This is an exception
+                        Log.Error($"A lifecourse points to a link id that does not exist in the unique links list. The lifecourse is skipped in indexation. Lifecourse id {lifecourse.Id}, link id {id}");
+                        skipLifecourse = true;
+                    }
                 }
+                if (skipLifecourse) continue;
                 lifecourse.InitKey();
                 lifecourse.Data_version = DataVersion;
                 yield return lifecourse;
