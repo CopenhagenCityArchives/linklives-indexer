@@ -75,7 +75,7 @@ namespace Linklives.Indexer.Lifecourses
             // Data version as given in WP3 data
             //TODO Set somewhere else
             DataVersion = dataVersion;
-            if (DataVersion == null) { throw new Exception("DataVersion is not set. Cannot continue"); }
+            if (string.IsNullOrEmpty(DataVersion)) { throw new Exception("DataVersion is not set. Cannot continue"); }
 
             var indextimer = Stopwatch.StartNew();
             var datasetTimer = Stopwatch.StartNew();
