@@ -135,5 +135,21 @@ namespace Linklives.Indexer.Utils
                 Log.Warn($"Could not update lifecourses for a batch {e.Message}");
             }
         }
+
+        /// <summary>
+        /// Creates a snapshot of the indices in Elasticsearch
+        /// Throws an exception if the request could not be completed
+        /// </summary>
+        public void CreateSnapshot()
+        {
+            var request = new SnapshotRequest("s3_repository", "latest");
+
+            var response = _esClient.Snapshot.Snapshot(request);
+
+            if (!response.Accepted)
+            {
+                throw new Exception("Could not create snapshot: " + response.ServerError);
+            }
+        }
     }
 }

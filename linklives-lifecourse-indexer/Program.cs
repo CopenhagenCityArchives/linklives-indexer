@@ -238,6 +238,9 @@ namespace Linklives.Indexer.Lifecourses
                     Log.Info($"Activating new indices");
                     indexHelper.ActivateNewIndices(AliasIndexMapping);
 
+                    Log.Info("Creating snapshot of all indices");
+                    indexHelper.CreateSnapshot();
+
                     Log.Info($"All done");
                 }
             }
