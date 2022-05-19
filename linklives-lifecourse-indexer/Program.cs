@@ -238,8 +238,18 @@ namespace Linklives.Indexer.Lifecourses
                     Log.Info($"Activating new indices");
                     indexHelper.ActivateNewIndices(AliasIndexMapping);
 
-                    Log.Info("Creating snapshot of all indices");
-                    indexHelper.CreateSnapshot();
+                    try
+                    {
+                        Log.Info("Creating repository if is does not exist");
+                        indexHelper.CreateRepository();
+
+                        Log.Info("Creating snapshot of all indices");
+                        indexHelper.CreateSnapshot();
+                    }
+                    catch(Exception e)
+                    {
+                        Log.Warn("Could not create snapshot from Elasticsearch: " + e.Message);
+                    }
 
                     Log.Info($"All done");
                 }

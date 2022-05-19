@@ -142,13 +142,36 @@ namespace Linklives.Indexer.Utils
         /// </summary>
         public void CreateSnapshot()
         {
-            var request = new SnapshotRequest("s3_repository", "latest");
+            
+            var date = DateTime.Now.ToString("dd-MM-yyyy_hh-mm-ss");
+            var snapshot_name = $"snapshot_{date}";
+
+            Log.Info($"Creating snapshot {snapshot_name}");
+
+            var request = new SnapshotRequest("s3_repository", snapshot_name);
 
             var response = _esClient.Snapshot.Snapshot(request);
 
             if (!response.Accepted)
             {
-                throw new Exception("Could not create snapshot: " + response.ServerError);
+                throw new Exception($"Could not create snapshot {snapshot_name}: " + response.ServerError);
+            }
+        }
+        /// <summary>
+        /// Creates or updates a S3 snapshot repository.
+        /// </summary>
+        public void CreateRepository()
+        {
+            var request = new CreateRepositoryRequest("s3_repository");
+            request.Repository = new S3Repository(new S3RepositorySettings("link-lives-elasticsearch-snapshots"));
+
+            Log.Info($"Creating repository s3_repository");
+
+            var response = _esClient.Snapshot.CreateRepository(request);
+
+            if (!response.Acknowledged)
+            {
+                throw new Exception($"Could not create repository s3_repository: " + response.ServerError);
             }
         }
     }
