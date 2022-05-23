@@ -195,7 +195,7 @@ namespace Linklives.Indexer.Lifecourses
                             }
 
                             AddLifeCourseUpdates(curPa, lifecourseUpdates, pasInLifeCourses);
-                            if (lifecourseUpdates.Count > 3000)
+                            if (lifecourseUpdates.Count > 1000)
                             {
                                 indexHelper.UpdateMany(lifecourseUpdateScript, lifecourseUpdates, AliasIndexMapping["lifecourses"]);
                                 lifecoursesUpdated += lifecourseUpdates.Count;

@@ -113,7 +113,7 @@ namespace Linklives.Indexer.Utils
             {
                 var bulkUpdateLifecoursesResponse = _esClient.Bulk(b => b
                                 .Index(index)
-                                .Timeout(TimeSpan.FromMinutes(7))
+                                .Timeout(TimeSpan.FromMinutes(10))
                                 .UpdateMany(updates, (descriptor, update) => descriptor
                                     .Id(update.Item1)
                                     .Script(s => s
@@ -127,7 +127,7 @@ namespace Linklives.Indexer.Utils
 
                 if (bulkUpdateLifecoursesResponse.Errors || !bulkUpdateLifecoursesResponse.ApiCall.Success)
                 {
-                    Log.Warn($"Could not index lifecourses for a batch {bulkUpdateLifecoursesResponse.DebugInformation}");
+                    Log.Warn($"Error while updating {typeof(T)}. First update: {updates.First().Item1}. Debug information: {bulkUpdateLifecoursesResponse.DebugInformation}");
                 }
             }
             catch(Exception e)
