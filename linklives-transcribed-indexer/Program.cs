@@ -53,6 +53,21 @@ namespace Linklives.Indexer.Transcribed
             Log.Info($"Finished indexing all avilable files. Took: {indextimer.Elapsed}");
             Log.Info($"Activating new index: {indexName}");
             indexHelper.ActivateNewIndex(indexAlias, indexName);
+
+            try
+            {
+                Log.Info("Creating repository if is does not exist");
+                indexHelper.CreateRepository();
+
+                Log.Info("Creating snapshot of all indices");
+                indexHelper.CreateSnapshot("transcribed", new List<string>() { indexName });
+            }
+            catch (Exception e)
+            {
+                Log.Warn("Could not create snapshot from Elasticsearch: " + e.Message);
+            }
+
+            Log.Info("All done");
         }
 
         private static IEnumerable<TranscribedPA> GetPas(string path, int maxEntries)
