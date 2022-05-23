@@ -244,7 +244,7 @@ namespace Linklives.Indexer.Lifecourses
                         indexHelper.CreateRepository();
 
                         Log.Info("Creating snapshot of all indices");
-                        indexHelper.CreateSnapshot();
+                        indexHelper.CreateSnapshot("pas_lifecourses_sources", AliasIndexMapping.Select(am => am.Key).ToList());
                     }
                     catch(Exception e)
                     {

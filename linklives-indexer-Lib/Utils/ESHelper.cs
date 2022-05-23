@@ -140,15 +140,16 @@ namespace Linklives.Indexer.Utils
         /// Creates a snapshot of the indices in Elasticsearch
         /// Throws an exception if the request could not be completed
         /// </summary>
-        public void CreateSnapshot()
+        public void CreateSnapshot(string name, List<string> Indices)
         {
             
             var date = DateTime.Now.ToString("dd-MM-yyyy_hh-mm-ss");
-            var snapshot_name = $"snapshot_{date}";
+            var snapshot_name = $"{name}_{date}";
 
-            Log.Info($"Creating snapshot {snapshot_name}");
+            Log.Info($"Creating snapshot {snapshot_name} of pas, lifecourses and sources");
 
             var request = new SnapshotRequest("s3_repository", snapshot_name);
+            request.Indices = Indices.ToArray();
 
             var response = _esClient.Snapshot.Snapshot(request);
 
