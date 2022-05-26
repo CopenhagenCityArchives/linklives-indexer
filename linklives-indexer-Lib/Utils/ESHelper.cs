@@ -69,7 +69,7 @@ namespace Linklives.Indexer.Utils
                .RefreshOnCompleted()
                .MaxDegreeOfParallelism(3)
                .Size(3000)
-               .Timeout(TimeSpan.FromMinutes(1))
+               .Timeout(TimeSpan.FromMinutes(5))
                .DroppedDocumentCallback((item, Document) =>
                {
                    Log.Debug($"The document {item} can not be indexed. Bulk all indexing will be halted.");
