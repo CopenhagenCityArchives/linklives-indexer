@@ -48,6 +48,7 @@ namespace Linklives.Indexer.Transcribed
             var indexName = indexHelper.CreateNewIndex<dynamic>(indexAlias, false);
             Log.Info($"Index {indexName} created");
             var indextimer = Stopwatch.StartNew();
+            Log.Info($"Indexing transcribed PAS");
             indexHelper.BulkIndexDocs<dynamic>(GetPas(path, maxEntries), indexName);
             indextimer.Stop();
             Log.Info($"Finished indexing all avilable files. Took: {indextimer.Elapsed}");
