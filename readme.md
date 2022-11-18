@@ -40,6 +40,14 @@ All this is done using Travis-CI.
 ### Linklives-lifecourse-indexer
 ``docker run linklives-lifecourse-indexer --es-host https://data-dev.link-lives.dk --path /app/link-lives/LL_data_v1.0.dev0/development --db-conn server=localhost;uid=root;pwd=123456;database=linklives_data --max-entries 10``
 
+## Indexation of test data
+Follow these steps to run an indexation of the test data from linklives-lib:
+* Clone https://github.com/CopenhagenCityArchives/linklives-elasticsearch.git
+* Start elastic search: ``docker-compose -f docker-compose-dev.yml up -d``
+* Clone https://github.com/CopenhagenCityArchives/linklives-indexer-new.git
+* Run lifecourse indexer from your local machine using these parameters: ``--es-host http://localhost:90 --ll-path "PATH_TO_LINKLIVESLIB/link-lives-data-demo/LL_data_v1.0/LL_data" --trs-path "PATH_TO_LINKLIVESLIB/link-lives-data-demo/transcribed_data_v1.0" --db-conn server=localhost;uid=root;pwd=123456;database=linklives_data --data-version "1.2" --skip-es false --skip-db true --max-entries 100``
+* Run transcribed indexer from your local machine using these parameters: ``--es-host http://localhost:90 --path PATH_TO_LINKLIVESLIB\link-lives-data-demo\\transcribed_data_v1.0``
+
 ### Data
 The WP3 data is currently delivered by hand doing like this:
 * Upload the data to S3://linklives-data
