@@ -38,6 +38,5 @@ script:
 deploy:
   provider: script
   script: deploy.sh
-  edge: true
   on:
     branch: master
