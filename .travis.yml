@@ -36,7 +36,8 @@ script:
   - sed "s/{image-tag}/${IMAGE_TAG}/g" deploy_script.sh > deploy.sh
 
 deploy:
+  skip_cleanup: true
   provider: script
-  script: deploy.sh
+  script: "./deploy.sh"
   on:
     branch: master
