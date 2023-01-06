@@ -33,7 +33,7 @@ script:
   - docker build -f ./linklives-lifecourse-indexer/Dockerfile.prod -t linklives-lifecourse-indexer .
 
   # replace {image-tag} with env variable value ${IMAGE_TAG}
-  - sed "s/{image-tag}/${IMAGE_TAG}/g" deploy_script.sh > script.sh
+  - sed "s/{image-tag}/${IMAGE_TAG}/g" deploy_script.sh > deploy.sh
 
 deploy:
   provider: script
