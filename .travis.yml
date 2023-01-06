@@ -33,11 +33,11 @@ script:
   - docker build -f ./linklives-lifecourse-indexer/Dockerfile.prod -t linklives-lifecourse-indexer .
 
   # replace {image-tag} with env variable value ${IMAGE_TAG}
-  - sed "s/{image-tag}/${IMAGE_TAG}/g" deploy_script.sh > deploy.sh
+  - sed "s/{image-tag}/${IMAGE_TAG}/g" deploy_script.sh > deploy_script.sh
 
 deploy:
   skip_cleanup: true
   provider: script
-  script: bash ./deploy.sh
+  script: bash ./deploy_script.sh
   on:
     branch: master

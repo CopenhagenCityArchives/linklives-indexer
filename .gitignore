@@ -10,7 +10,6 @@
 *.userosscache
 *.sln.docstates
 out
-deploy.sh
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
